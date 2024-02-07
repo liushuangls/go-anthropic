@@ -1,2 +1,2 @@
 # go-anthropic
-Anthropic Claude API wrapper for Go
+Anthropic Claude API wrapper for Go (Unofficial)
