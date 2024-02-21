@@ -24,10 +24,7 @@ func (e *APIError) Error() string {
 }
 
 func (e *RequestError) Error() string {
-	if e.Err != nil {
-		return e.Err.Error()
-	}
-	return fmt.Sprintf("anthropic request error: status code %d", e.StatusCode)
+	return fmt.Sprintf("anthropic request error status code: %d, err: %s", e.StatusCode, e.Err)
 }
 
 func (e *RequestError) Unwrap() error {

@@ -11,9 +11,9 @@ type CompleteRequest struct {
 	MaxTokensToSample int    `json:"max_tokens_to_sample"`
 
 	StopSequences []string       `json:"stop_sequences,omitempty"`
-	Temperature   *float64       `json:"temperature,omitempty"`
-	TopP          *float64       `json:"top_p,omitempty"`
-	TopK          int            `json:"top_k,omitempty"`
+	Temperature   *float32       `json:"temperature,omitempty"`
+	TopP          *float32       `json:"top_p,omitempty"`
+	TopK          *int           `json:"top_k,omitempty"`
 	MetaData      map[string]any `json:"meta_data,omitempty"`
 	Stream        bool           `json:"stream,omitempty"`
 }

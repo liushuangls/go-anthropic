@@ -21,7 +21,8 @@ func TestComplete(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(ts.URL+"/v1"))
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl))
 	resp, err := client.CreateComplete(context.Background(), anthropic.CompleteRequest{
 		Model:             anthropic.ModelClaudeInstant1Dot2,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
@@ -31,7 +32,7 @@ func TestComplete(t *testing.T) {
 		t.Fatalf("CreateComplete error: %v", err)
 	}
 
-	t.Logf("%+v", resp)
+	t.Logf("Create Complete resp: %+v", resp)
 }
 
 func handleCompleteEndpoint(w http.ResponseWriter, r *http.Request) {
