@@ -26,7 +26,7 @@ type ClientConfig struct {
 
 type ClientOption func(c *ClientConfig)
 
-func NewConfig(apikey string, opts ...ClientOption) ClientConfig {
+func newConfig(apikey string, opts ...ClientOption) ClientConfig {
 	c := ClientConfig{
 		apikey: apikey,
 
