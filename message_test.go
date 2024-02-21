@@ -29,7 +29,7 @@ func TestMessages(t *testing.T) {
 	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
 		Model: anthropic.ModelClaudeInstant1Dot2,
 		Messages: []anthropic.Message{
-			{Role: "111", Content: "What is your name?"},
+			{Role: anthropic.RoleUser, Content: "What is your name?"},
 		},
 		MaxTokens: 1000,
 	})

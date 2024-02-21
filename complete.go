@@ -28,6 +28,8 @@ type CompleteResponse struct {
 }
 
 func (c *Client) CreateComplete(ctx context.Context, request CompleteRequest) (response CompleteResponse, err error) {
+	request.Stream = false
+
 	urlSuffix := "/complete"
 	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, request)
 	if err != nil {

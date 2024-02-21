@@ -55,6 +55,8 @@ type MessagesUsage struct {
 }
 
 func (c *Client) CreateMessages(ctx context.Context, request MessagesRequest) (response MessagesResponse, err error) {
+	request.Stream = false
+
 	urlSuffix := "/messages"
 	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, request)
 	if err != nil {

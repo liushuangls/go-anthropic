@@ -27,17 +27,8 @@ func (c *Client) sendRequest(req *http.Request, v any) error {
 
 	defer res.Body.Close()
 
-	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		err = json.NewDecoder(res.Body).Decode(&errRes)
-		if err != nil || errRes.Error == nil {
-			reqErr := RequestError{
-				StatusCode: res.StatusCode,
-				Err:        err,
-			}
-			return fmt.Errorf("error, %w", &reqErr)
-		}
-		return fmt.Errorf("error, status code: %d, message: %w", res.StatusCode, errRes.Error)
+	if err := c.handlerRequestError(res); err != nil {
+		return err
 	}
 
 	if v != nil {
@@ -46,6 +37,22 @@ func (c *Client) sendRequest(req *http.Request, v any) error {
 		}
 	}
 
+	return nil
+}
+
+func (c *Client) handlerRequestError(resp *http.Response) error {
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		var errRes ErrorResponse
+		err := json.NewDecoder(resp.Body).Decode(&errRes)
+		if err != nil || errRes.Error == nil {
+			reqErr := RequestError{
+				StatusCode: resp.StatusCode,
+				Err:        err,
+			}
+			return fmt.Errorf("error, %w", &reqErr)
+		}
+		return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
+	}
 	return nil
 }
 
