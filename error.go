@@ -20,7 +20,7 @@ type ErrorResponse struct {
 }
 
 func (e *APIError) Error() string {
-	return e.Message
+	return fmt.Sprintf("anthropic api error type: %s, message: %s", e.Type, e.Message)
 }
 
 func (e *RequestError) Error() string {

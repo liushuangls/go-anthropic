@@ -41,7 +41,47 @@ func TestMessagesStream(t *testing.T) {
 	t.Logf("CreateMessagesSteam resp: %+v", resp)
 }
 
+func TestMessagesStreamError(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handlerMessagesStream)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+	var temperature float32 = 2.0
+	_, err := client.CreateMessagesSteam(context.Background(), anthropic.MessagesStreamRequest{
+		MessagesRequest: anthropic.MessagesRequest{
+			Model: anthropic.ModelClaudeInstant1Dot2,
+			Messages: []anthropic.Message{
+				{Role: anthropic.RoleUser, Content: "What is your name?"},
+			},
+			MaxTokens:   1000,
+			Temperature: &temperature,
+		},
+		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
+			t.Logf("CreateMessagesSteam delta resp: %+v", data)
+		},
+	})
+	if err == nil {
+		t.Fatalf("CreateMessagesSteam expect error, but not")
+	}
+
+	t.Logf("CreateMessagesSteam error: %s", err)
+}
+
 func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
+	request, err := getMessagesRequest(r)
+	if err != nil {
+		http.Error(w, "request error", http.StatusBadRequest)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/event-stream")
 
 	var dataBytes []byte
@@ -63,6 +103,11 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 
 	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" is"}}`+"\n\n")...)
+
+	if request.Temperature != nil && *request.Temperature > 1 {
+		dataBytes = append(dataBytes, []byte("event: error\n")...)
+		dataBytes = append(dataBytes, []byte(`data: {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}`+"\n\n")...)
+	}
 
 	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Claude"}}`+"\n\n")...)
