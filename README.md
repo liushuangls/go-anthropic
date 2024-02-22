@@ -1,4 +1,7 @@
 # go-anthropic
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/liushuangls/go-anthropic.svg)](https://pkg.go.dev/github.com/liushuangls/go-anthropic)
+
 Anthropic Claude API wrapper for Go (Unofficial). Support:
 
 - Completions
