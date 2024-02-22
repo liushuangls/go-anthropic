@@ -49,7 +49,7 @@ func (c *Client) handlerRequestError(resp *http.Response) error {
 				StatusCode: resp.StatusCode,
 				Err:        err,
 			}
-			return fmt.Errorf("error, %w", &reqErr)
+			return &reqErr
 		}
 		return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
 	}
