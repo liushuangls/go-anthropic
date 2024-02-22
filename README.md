@@ -70,7 +70,7 @@ import (
 
 func main() {
 	client := anthropic.NewClient("your anthropic apikey")
-	resp, err := client.CreateMessagesSteam(context.Background(),  anthropic.MessagesStreamRequest{
+	resp, err := client.CreateMessagesStream(context.Background(),  anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			Messages: []anthropic.Message{

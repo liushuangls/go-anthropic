@@ -31,7 +31,7 @@ func TestCompleteStream(t *testing.T) {
 		anthropic.WithBaseURL(baseUrl),
 	)
 	var receivedContent string
-	resp, err := client.CreateStreamComplete(context.Background(), anthropic.CompleteStreamRequest{
+	resp, err := client.CreateCompleteStream(context.Background(), anthropic.CompleteStreamRequest{
 		CompleteRequest: anthropic.CompleteRequest{
 			Model:             anthropic.ModelClaudeInstant1Dot2,
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
@@ -39,23 +39,23 @@ func TestCompleteStream(t *testing.T) {
 		},
 		OnCompletion: func(data anthropic.CompleteResponse) {
 			receivedContent += data.Completion
-			//t.Logf("CreateStreamComplete OnCompletion data: %+v", data)
+			//t.Logf("CreateCompleteStream OnCompletion data: %+v", data)
 		},
 		OnPing:  func(data anthropic.CompleteStreamPingData) {},
 		OnError: func(response anthropic.ErrorResponse) {},
 	})
 	if err != nil {
-		t.Fatalf("CreateStreamComplete error: %s", err)
+		t.Fatalf("CreateCompleteStream error: %s", err)
 	}
 
 	expected := strings.Join(testCompletionStreamContent, "")
 	if receivedContent != expected {
-		t.Fatalf("CreateStreamComplete content not match expected: %s, got: %s", expected, receivedContent)
+		t.Fatalf("CreateCompleteStream content not match expected: %s, got: %s", expected, receivedContent)
 	}
 	if resp.Completion != expected {
-		t.Fatalf("CreateStreamComplete content not match expected: %s, got: %s", expected, resp.Completion)
+		t.Fatalf("CreateCompleteStream content not match expected: %s, got: %s", expected, resp.Completion)
 	}
-	t.Logf("CreateStreamComplete resp: %+v", resp)
+	t.Logf("CreateCompleteStream resp: %+v", resp)
 }
 
 func TestCompleteStreamError(t *testing.T) {
@@ -73,7 +73,7 @@ func TestCompleteStreamError(t *testing.T) {
 	)
 	var temperature float32 = 2.0
 	var receivedContent string
-	_, err := client.CreateStreamComplete(context.Background(), anthropic.CompleteStreamRequest{
+	_, err := client.CreateCompleteStream(context.Background(), anthropic.CompleteStreamRequest{
 		CompleteRequest: anthropic.CompleteRequest{
 			Model:             anthropic.ModelClaudeInstant1Dot2,
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
@@ -82,7 +82,7 @@ func TestCompleteStreamError(t *testing.T) {
 		},
 		OnCompletion: func(data anthropic.CompleteResponse) {
 			receivedContent += data.Completion
-			//t.Logf("CreateStreamComplete OnCompletion data: %+v", data)
+			//t.Logf("CreateCompleteStream OnCompletion data: %+v", data)
 		},
 		OnPing:  func(data anthropic.CompleteStreamPingData) {},
 		OnError: func(response anthropic.ErrorResponse) {},
@@ -94,7 +94,7 @@ func TestCompleteStreamError(t *testing.T) {
 		t.Fatal("should api error")
 	}
 
-	t.Logf("CreateStreamComplete error: %+v", err)
+	t.Logf("CreateCompleteStream error: %+v", err)
 }
 
 func handlerCompleteStream(w http.ResponseWriter, r *http.Request) {

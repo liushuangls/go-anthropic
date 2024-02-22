@@ -29,7 +29,7 @@ func TestMessagesStream(t *testing.T) {
 		anthropic.WithBaseURL(baseUrl),
 	)
 	var received string
-	resp, err := client.CreateMessagesSteam(context.Background(), anthropic.MessagesStreamRequest{
+	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			Messages: []anthropic.Message{
@@ -39,7 +39,7 @@ func TestMessagesStream(t *testing.T) {
 		},
 		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
 			received += data.Delta.Text
-			//t.Logf("CreateMessagesSteam delta resp: %+v", data)
+			//t.Logf("CreateMessagesStream delta resp: %+v", data)
 		},
 		OnError:             func(response anthropic.ErrorResponse) {},
 		OnPing:              func(data anthropic.MessagesEventPingData) {},
@@ -50,18 +50,18 @@ func TestMessagesStream(t *testing.T) {
 		OnMessageStop:       func(data anthropic.MessagesEventMessageStopData) {},
 	})
 	if err != nil {
-		t.Fatalf("CreateMessagesSteam error: %s", err)
+		t.Fatalf("CreateMessagesStream error: %s", err)
 	}
 
 	expectedContent := strings.Join(testMessagesStreamContent, "")
 	if received != expectedContent {
-		t.Fatalf("CreateMessagesSteam content not match expected: %s, got: %s", expectedContent, received)
+		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, received)
 	}
 	if resp.Content[0].Text != expectedContent {
-		t.Fatalf("CreateMessagesSteam content not match expected: %s, got: %s", expectedContent, resp.Content[0].Text)
+		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, resp.Content[0].Text)
 	}
 
-	t.Logf("CreateMessagesSteam resp: %+v", resp)
+	t.Logf("CreateMessagesStream resp: %+v", resp)
 }
 
 func TestMessagesStreamError(t *testing.T) {
@@ -78,7 +78,7 @@ func TestMessagesStreamError(t *testing.T) {
 		anthropic.WithBaseURL(baseUrl),
 	)
 	var temperature float32 = 2.0
-	_, err := client.CreateMessagesSteam(context.Background(), anthropic.MessagesStreamRequest{
+	_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			Messages: []anthropic.Message{
@@ -88,15 +88,15 @@ func TestMessagesStreamError(t *testing.T) {
 			Temperature: &temperature,
 		},
 		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
-			t.Logf("CreateMessagesSteam delta resp: %+v", data)
+			t.Logf("CreateMessagesStream delta resp: %+v", data)
 		},
 		OnError: func(response anthropic.ErrorResponse) {},
 	})
 	if err == nil {
-		t.Fatalf("CreateMessagesSteam expect error, but not")
+		t.Fatalf("CreateMessagesStream expect error, but not")
 	}
 
-	t.Logf("CreateMessagesSteam error: %s", err)
+	t.Logf("CreateMessagesStream error: %s", err)
 }
 
 func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
