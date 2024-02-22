@@ -90,6 +90,7 @@ func TestMessagesStreamError(t *testing.T) {
 		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
 			t.Logf("CreateMessagesSteam delta resp: %+v", data)
 		},
+		OnError: func(response anthropic.ErrorResponse) {},
 	})
 	if err == nil {
 		t.Fatalf("CreateMessagesSteam expect error, but not")

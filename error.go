@@ -26,7 +26,3 @@ func (e *APIError) Error() string {
 func (e *RequestError) Error() string {
 	return fmt.Sprintf("anthropic request error status code: %d, err: %s", e.StatusCode, e.Err)
 }
-
-func (e *RequestError) Unwrap() error {
-	return e.Err
-}
