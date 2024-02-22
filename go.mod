@@ -1,3 +1,3 @@
-module anthropic
+module github.com/liushuangls/go-anthropic
 
-go 1.20
+go 1.21

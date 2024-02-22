@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"anthropic"
-	"anthropic/internal/test"
+	"github.com/liushuangls/go-anthropic"
+	"github.com/liushuangls/go-anthropic/internal/test"
 )
 
 func TestMessages(t *testing.T) {
