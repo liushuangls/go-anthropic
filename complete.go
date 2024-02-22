@@ -18,6 +18,18 @@ type CompleteRequest struct {
 	Stream        bool           `json:"stream,omitempty"`
 }
 
+func (c *CompleteRequest) SetTemperature(t float32) {
+	c.Temperature = &t
+}
+
+func (c *CompleteRequest) SetTopP(p float32) {
+	c.TopP = &p
+}
+
+func (c *CompleteRequest) SetTopK(k int) {
+	c.TopK = &k
+}
+
 type CompleteResponse struct {
 	Type       string `json:"type"`
 	ID         string `json:"id"`

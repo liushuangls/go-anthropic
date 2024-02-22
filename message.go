@@ -24,8 +24,20 @@ type MessagesRequest struct {
 	StopSequences []string       `json:"stop_sequences,omitempty"`
 	Stream        bool           `json:"stream,omitempty"`
 	Temperature   *float32       `json:"temperature,omitempty"`
-	TopK          *float32       `json:"top_k,omitempty"`
-	TopP          *int           `json:"top_p,omitempty"`
+	TopP          *float32       `json:"top_p,omitempty"`
+	TopK          *int           `json:"top_k,omitempty"`
+}
+
+func (m *MessagesRequest) SetTemperature(t float32) {
+	m.Temperature = &t
+}
+
+func (m *MessagesRequest) SetTopP(p float32) {
+	m.TopP = &p
+}
+
+func (m *MessagesRequest) SetTopK(k int) {
+	m.TopK = &k
 }
 
 type Message struct {

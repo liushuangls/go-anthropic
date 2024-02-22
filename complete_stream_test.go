@@ -71,14 +71,13 @@ func TestCompleteStreamError(t *testing.T) {
 		test.GetTestToken(),
 		anthropic.WithBaseURL(baseUrl),
 	)
-	var temperature float32 = 2.0
 	var receivedContent string
-	_, err := client.CreateCompleteStream(context.Background(), anthropic.CompleteStreamRequest{
+	param := anthropic.CompleteStreamRequest{
 		CompleteRequest: anthropic.CompleteRequest{
 			Model:             anthropic.ModelClaudeInstant1Dot2,
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 			MaxTokensToSample: 1000,
-			Temperature:       &temperature,
+			//Temperature:       &temperature,
 		},
 		OnCompletion: func(data anthropic.CompleteResponse) {
 			receivedContent += data.Completion
@@ -86,7 +85,9 @@ func TestCompleteStreamError(t *testing.T) {
 		},
 		OnPing:  func(data anthropic.CompleteStreamPingData) {},
 		OnError: func(response anthropic.ErrorResponse) {},
-	})
+	}
+	param.SetTemperature(2)
+	_, err := client.CreateCompleteStream(context.Background(), param)
 	checks.HasError(t, err, "should error")
 
 	var e *anthropic.APIError

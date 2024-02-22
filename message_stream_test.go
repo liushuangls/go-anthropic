@@ -77,21 +77,23 @@ func TestMessagesStreamError(t *testing.T) {
 		test.GetTestToken(),
 		anthropic.WithBaseURL(baseUrl),
 	)
-	var temperature float32 = 2.0
-	_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+	param := anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			Messages: []anthropic.Message{
 				{Role: anthropic.RoleUser, Content: "What is your name?"},
 			},
-			MaxTokens:   1000,
-			Temperature: &temperature,
+			MaxTokens: 1000,
 		},
 		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
 			t.Logf("CreateMessagesStream delta resp: %+v", data)
 		},
 		OnError: func(response anthropic.ErrorResponse) {},
-	})
+	}
+	param.SetTemperature(2)
+	param.SetTopP(2)
+	param.SetTopK(1)
+	_, err := client.CreateMessagesStream(context.Background(), param)
 	if err == nil {
 		t.Fatalf("CreateMessagesStream expect error, but not")
 	}
