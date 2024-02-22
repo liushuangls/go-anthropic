@@ -44,7 +44,7 @@ func main() {
 		MaxTokens: 1000,
 	})
 	if err != nil {
-		var e anthropic.APIError
+		var e *anthropic.APIError
 		if errors.As(err, &e) {
 			fmt.Printf("Messages error, type: %s, message: %s", e.Type, e.Message)
 		} else {
@@ -83,7 +83,7 @@ func main() {
 		},
 	})
 	if err != nil {
-		var e anthropic.APIError
+		var e *anthropic.APIError
 		if errors.As(err, &e) {
 			fmt.Printf("Messages stream error, type: %s, message: %s", e.Type, e.Message)
 		} else {
