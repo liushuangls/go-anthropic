@@ -56,6 +56,14 @@ type MessagesResponse struct {
 	Usage        MessagesUsage        `json:"usage"`
 }
 
+// GetFirstContentText get Content[0].Text avoid panic
+func (m MessagesResponse) GetFirstContentText() string {
+	if len(m.Content) == 0 {
+		return ""
+	}
+	return m.Content[0].Text
+}
+
 type MessagesContent struct {
 	Type string `json:"type"`
 	Text string `json:"text"`

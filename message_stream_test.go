@@ -57,8 +57,8 @@ func TestMessagesStream(t *testing.T) {
 	if received != expectedContent {
 		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, received)
 	}
-	if resp.Content[0].Text != expectedContent {
-		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, resp.Content[0].Text)
+	if resp.GetFirstContentText() != expectedContent {
+		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, resp.GetFirstContentText())
 	}
 
 	t.Logf("CreateMessagesStream resp: %+v", resp)
