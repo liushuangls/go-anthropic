@@ -2,11 +2,17 @@ package anthropic_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"anthropic"
 	"anthropic/internal/test"
+)
+
+var (
+	testMessagesStreamContent = []string{"My", " name", " is", " Claude", "."}
 )
 
 func TestMessagesStream(t *testing.T) {
@@ -22,6 +28,7 @@ func TestMessagesStream(t *testing.T) {
 		test.GetTestToken(),
 		anthropic.WithBaseURL(baseUrl),
 	)
+	var received string
 	resp, err := client.CreateMessagesSteam(context.Background(), anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
@@ -31,11 +38,20 @@ func TestMessagesStream(t *testing.T) {
 			MaxTokens: 1000,
 		},
 		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
-			t.Logf("CreateMessagesSteam delta resp: %+v", data)
+			received += data.Delta.Text
+			//t.Logf("CreateMessagesSteam delta resp: %+v", data)
 		},
 	})
 	if err != nil {
 		t.Fatalf("CreateMessagesSteam error: %s", err)
+	}
+
+	expectedContent := strings.Join(testMessagesStreamContent, "")
+	if received != expectedContent {
+		t.Fatalf("CreateMessagesSteam content not match expected: %s, got: %s", expectedContent, received)
+	}
+	if resp.Content[0].Text != expectedContent {
+		t.Fatalf("CreateMessagesSteam content not match expected: %s, got: %s", expectedContent, resp.Content[0].Text)
 	}
 
 	t.Logf("CreateMessagesSteam resp: %+v", resp)
@@ -86,6 +102,11 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 
 	var dataBytes []byte
 
+	if request.Temperature != nil && *request.Temperature > 1 {
+		dataBytes = append(dataBytes, []byte("event: error\n")...)
+		dataBytes = append(dataBytes, []byte(`data: {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}`+"\n\n")...)
+	}
+
 	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-instant-1.2","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n")...)
 
@@ -95,25 +116,10 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 	dataBytes = append(dataBytes, []byte("event: ping\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type": "ping"}`+"\n\n")...)
 
-	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"My"}}`+"\n\n")...)
-
-	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" name"}}`+"\n\n")...)
-
-	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" is"}}`+"\n\n")...)
-
-	if request.Temperature != nil && *request.Temperature > 1 {
-		dataBytes = append(dataBytes, []byte("event: error\n")...)
-		dataBytes = append(dataBytes, []byte(`data: {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}`+"\n\n")...)
+	for _, t := range testMessagesStreamContent {
+		dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
+		dataBytes = append(dataBytes, []byte(fmt.Sprintf(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"%s"}}`, t)+"\n\n")...)
 	}
-
-	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Claude"}}`+"\n\n")...)
-
-	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}}`+"\n\n")...)
 
 	dataBytes = append(dataBytes, []byte("event: content_block_stop\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_stop","index":0}`+"\n\n")...)
