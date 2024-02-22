@@ -39,6 +39,8 @@ func TestCompleteStream(t *testing.T) {
 			receivedContent += data.Completion
 			//t.Logf("CreateStreamComplete OnCompletion data: %+v", data)
 		},
+		OnPing:  func(data anthropic.CompleteStreamPingData) {},
+		OnError: func(response anthropic.ErrorResponse) {},
 	})
 	if err != nil {
 		t.Fatalf("CreateStreamComplete error: %s", err)

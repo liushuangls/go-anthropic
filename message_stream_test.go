@@ -41,6 +41,13 @@ func TestMessagesStream(t *testing.T) {
 			received += data.Delta.Text
 			//t.Logf("CreateMessagesSteam delta resp: %+v", data)
 		},
+		OnError:             func(response anthropic.ErrorResponse) {},
+		OnPing:              func(data anthropic.MessagesEventPingData) {},
+		OnMessageStart:      func(data anthropic.MessagesEventMessageStartData) {},
+		OnContentBlockStart: func(data anthropic.MessagesEventContentBlockStartData) {},
+		OnContentBlockStop:  func(data anthropic.MessagesEventContentBlockStopData) {},
+		OnMessageDelta:      func(data anthropic.MessagesEventMessageDeltaData) {},
+		OnMessageStop:       func(data anthropic.MessagesEventMessageStopData) {},
 	})
 	if err != nil {
 		t.Fatalf("CreateMessagesSteam error: %s", err)
