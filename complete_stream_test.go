@@ -2,6 +2,7 @@ package anthropic_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/liushuangls/go-anthropic"
 	"github.com/liushuangls/go-anthropic/internal/test"
+	"github.com/liushuangls/go-anthropic/internal/test/checks"
 )
 
 var (
@@ -54,6 +56,45 @@ func TestCompleteStream(t *testing.T) {
 		t.Fatalf("CreateStreamComplete content not match expected: %s, got: %s", expected, resp.Completion)
 	}
 	t.Logf("CreateStreamComplete resp: %+v", resp)
+}
+
+func TestCompleteStreamError(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/complete", handlerCompleteStream)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+	var temperature float32 = 2.0
+	var receivedContent string
+	_, err := client.CreateStreamComplete(context.Background(), anthropic.CompleteStreamRequest{
+		CompleteRequest: anthropic.CompleteRequest{
+			Model:             anthropic.ModelClaudeInstant1Dot2,
+			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
+			MaxTokensToSample: 1000,
+			Temperature:       &temperature,
+		},
+		OnCompletion: func(data anthropic.CompleteResponse) {
+			receivedContent += data.Completion
+			//t.Logf("CreateStreamComplete OnCompletion data: %+v", data)
+		},
+		OnPing:  func(data anthropic.CompleteStreamPingData) {},
+		OnError: func(response anthropic.ErrorResponse) {},
+	})
+	checks.HasError(t, err, "should error")
+
+	var e *anthropic.APIError
+	if !errors.As(err, &e) {
+		t.Fatal("should api error")
+	}
+
+	t.Logf("CreateStreamComplete error: %+v", err)
 }
 
 func handlerCompleteStream(w http.ResponseWriter, r *http.Request) {
