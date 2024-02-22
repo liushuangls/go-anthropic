@@ -3,6 +3,7 @@ package anthropic_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/liushuangls/go-anthropic"
 	"github.com/liushuangls/go-anthropic/internal/test"
+	"github.com/liushuangls/go-anthropic/internal/test/checks"
 )
 
 func TestMessages(t *testing.T) {
@@ -38,6 +40,36 @@ func TestMessages(t *testing.T) {
 	}
 
 	t.Logf("CreateMessages resp: %+v", resp)
+}
+
+func TestMessagesTokenError(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken()+"1",
+		anthropic.WithBaseURL(baseUrl),
+	)
+	_, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+		Model: anthropic.ModelClaudeInstant1Dot2,
+		Messages: []anthropic.Message{
+			{Role: anthropic.RoleUser, Content: "What is your name?"},
+		},
+		MaxTokens: 1000,
+	})
+	checks.HasError(t, err, "should error")
+
+	var e *anthropic.RequestError
+	if !errors.As(err, &e) {
+		t.Log("should request error")
+	}
+
+	t.Logf("CreateMessages error: %s", err)
 }
 
 func handleMessagesEndpoint(w http.ResponseWriter, r *http.Request) {
