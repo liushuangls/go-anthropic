@@ -95,6 +95,68 @@ func main() {
 }
 ```
 
+### Messages Vision example usage:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/liushuangls/go-anthropic"
+)
+
+func main() {
+	client := anthropic.NewClient("your anthropic apikey")
+
+	imagePath := "xxx"
+	imageMediaType := "image/jpeg"
+	imageFile, err := os.Open(imagePath)
+	if err != nil {
+		panic(err)
+	}
+	imageData, err := io.ReadAll(imageFile)
+	if err != nil {
+		panic(err)
+	}
+    
+	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+		Model: anthropic.ModelClaude3Opus20240229, // only claude 3 model can use vision
+		Messages: []anthropic.Message{
+			{
+				Role: anthropic.RoleUser,
+				Content: []any{
+					anthropic.MessageImageContent{
+						Type: "image",
+						Source: anthropic.MessageImageContentSource{
+							Type:      "base64",
+							MediaType: imageMediaType,
+							Data:      imageData,
+						},
+					},
+					anthropic.MessageTextContent{
+						Type: "text",
+						Text: "Describe this image.",
+					},
+				},
+			},
+		},
+		MaxTokens: 1000,
+	})
+	if err != nil {
+		var e *anthropic.APIError
+		if errors.As(err, &e) {
+			fmt.Printf("Messages error, type: %s, message: %s", e.Type, e.Message)
+		} else {
+			fmt.Printf("Messages error: %v\n", err)
+        }
+		return
+	}
+	fmt.Println(resp.Content[0].Text)
+}
+```
+
 ## Acknowledgments
 The following project had particular influence on go-anthropic is design.
 

@@ -2,6 +2,7 @@ package anthropic_test
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"errors"
 	"io"
@@ -14,6 +15,9 @@ import (
 	"github.com/liushuangls/go-anthropic/internal/test"
 	"github.com/liushuangls/go-anthropic/internal/test/checks"
 )
+
+//go:embed internal/test/sources/*
+var sources embed.FS
 
 func TestMessages(t *testing.T) {
 	server := test.NewTestServer()
@@ -73,6 +77,60 @@ func TestMessagesTokenError(t *testing.T) {
 	}
 
 	t.Logf("CreateMessages error: %s", err)
+}
+
+func TestMessagesVision(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	imagePath := "internal/test/sources/ant.jpg"
+	imageMediaType := "image/jpeg"
+	imageFile, err := sources.Open(imagePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	imageData, err := io.ReadAll(imageFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+		Model: anthropic.ModelClaude3Opus20240229,
+		Messages: []anthropic.Message{
+			{
+				Role: anthropic.RoleUser,
+				Content: []any{
+					anthropic.MessageImageContent{
+						Type: "image",
+						Source: anthropic.MessageImageContentSource{
+							Type:      "base64",
+							MediaType: imageMediaType,
+							Data:      imageData,
+						},
+					},
+					anthropic.MessageTextContent{
+						Type: "text",
+						Text: "Describe this image.",
+					},
+				},
+			},
+		},
+		MaxTokens: 1000,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("CreateMessages resp: %+v", resp)
 }
 
 func handleMessagesEndpoint(w http.ResponseWriter, r *http.Request) {

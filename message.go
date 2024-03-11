@@ -42,7 +42,23 @@ func (m *MessagesRequest) SetTopK(k int) {
 
 type Message struct {
 	Role    string `json:"role"`
-	Content string `json:"content"`
+	Content any    `json:"content"` // Content can be string, MessageTextContent or MessageImageContent or slice
+}
+
+type MessageTextContent struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type MessageImageContent struct {
+	Type   string                    `json:"type"`
+	Source MessageImageContentSource `json:"source"`
+}
+
+type MessageImageContentSource struct {
+	Type      string `json:"type"`
+	MediaType string `json:"media_type"`
+	Data      any    `json:"data"`
 }
 
 type MessagesResponse struct {
