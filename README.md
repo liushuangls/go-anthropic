@@ -11,6 +11,7 @@ Anthropic Claude API wrapper for Go (Unofficial). Support:
 - Streaming Completions
 - Messages
 - Streaming Messages
+- Vision
 
 ## Installation
 
