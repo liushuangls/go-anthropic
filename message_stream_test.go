@@ -33,7 +33,7 @@ func TestMessagesStream(t *testing.T) {
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			Messages: []anthropic.Message{
-				{Role: anthropic.RoleUser, Content: "What is your name?"},
+				anthropic.NewUserTextMessage("What is your name?"),
 			},
 			MaxTokens: 1000,
 		},
@@ -81,7 +81,7 @@ func TestMessagesStreamError(t *testing.T) {
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			Messages: []anthropic.Message{
-				{Role: anthropic.RoleUser, Content: "What is your name?"},
+				anthropic.NewUserTextMessage("What is your name?"),
 			},
 			MaxTokens: 1000,
 		},

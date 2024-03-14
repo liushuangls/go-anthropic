@@ -41,21 +41,67 @@ func (m *MessagesRequest) SetTopK(k int) {
 }
 
 type Message struct {
-	Role    string `json:"role"`
-	Content any    `json:"content"` // Content can be string, MessageTextContent or MessageImageContent or slice
+	Role    string           `json:"role"`
+	Content []MessageContent `json:"content"`
 }
 
-type MessageTextContent struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+func NewUserTextMessage(text string) Message {
+	return Message{
+		Role:    "user",
+		Content: []MessageContent{NewTextMessageContent(text)},
+	}
 }
 
-type MessageImageContent struct {
-	Type   string                    `json:"type"`
-	Source MessageImageContentSource `json:"source"`
+func NewAssistantTextMessage(text string) Message {
+	return Message{
+		Role:    "assistant",
+		Content: []MessageContent{NewTextMessageContent(text)},
+	}
 }
 
-type MessageImageContentSource struct {
+func (m Message) GetFirstContent() MessageContent {
+	if len(m.Content) == 0 {
+		return MessageContent{}
+	}
+	return m.Content[0]
+}
+
+type MessageContent struct {
+	Type   string                     `json:"type"`
+	Text   *string                    `json:"text,omitempty"`
+	Source *MessageContentImageSource `json:"source,omitempty"`
+}
+
+func NewTextMessageContent(text string) MessageContent {
+	return MessageContent{
+		Type: "text",
+		Text: &text,
+	}
+}
+
+func NewImageMessageContent(source MessageContentImageSource) MessageContent {
+	return MessageContent{
+		Type:   "image",
+		Source: &source,
+	}
+}
+
+func (m MessageContent) IsTextContent() bool {
+	return m.Type == "text"
+}
+
+func (m MessageContent) IsImageContent() bool {
+	return m.Type == "image"
+}
+
+func (m MessageContent) GetText() string {
+	if m.IsTextContent() && m.Text != nil {
+		return *m.Text
+	}
+	return ""
+}
+
+type MessageContentImageSource struct {
 	Type      string `json:"type"`
 	MediaType string `json:"media_type"`
 	Data      any    `json:"data"`

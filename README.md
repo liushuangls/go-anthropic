@@ -40,7 +40,7 @@ func main() {
 	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
 		Model: anthropic.ModelClaudeInstant1Dot2,
 		Messages: []anthropic.Message{
-			{Role: anthropic.RoleUser, Content: "What is your name?"},
+			anthropic.NewUserTextMessage("What is your name?"),
 		},
 		MaxTokens: 1000,
 	})
@@ -75,7 +75,7 @@ func main() {
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			Messages: []anthropic.Message{
-				{Role: anthropic.RoleUser, Content: "What is your name?"},
+				anthropic.NewUserTextMessage("What is your name?"),
 			},
 			MaxTokens:   1000,
 		},
@@ -121,25 +121,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-    
+
 	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-		Model: anthropic.ModelClaude3Opus20240229, // only claude 3 model can use vision
+		Model: anthropic.ModelClaude3Opus20240229,
 		Messages: []anthropic.Message{
 			{
 				Role: anthropic.RoleUser,
-				Content: []any{
-					anthropic.MessageImageContent{
-						Type: "image",
-						Source: anthropic.MessageImageContentSource{
-							Type:      "base64",
-							MediaType: imageMediaType,
-							Data:      imageData,
-						},
-					},
-					anthropic.MessageTextContent{
-						Type: "text",
-						Text: "Describe this image.",
-					},
+				Content: []anthropic.MessageContent{
+					anthropic.NewImageMessageContent(anthropic.MessageContentImageSource{
+						Type:      "base64",
+						MediaType: imageMediaType,
+						Data:      imageData,
+					}),
+					anthropic.NewTextMessageContent("Describe this image."),
 				},
 			},
 		},
