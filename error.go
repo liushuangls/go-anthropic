@@ -3,20 +3,20 @@ package anthropic
 import "fmt"
 
 const (
-	// InvalidRequestErr There was an issue with the format or content of your request.
-	InvalidRequestErr = "invalid_request_error"
-	// AuthenticationErr There's an issue with your API key.
-	AuthenticationErr = "authentication_error"
-	// PermissionErr Your API key does not have permission to use the specified resource.
-	PermissionErr = "permission_error"
-	// NotFoundErr The requested resource was not found.
-	NotFoundErr = "not_found_error"
-	// RateLimitErr Your account has hit a rate limit.
-	RateLimitErr = "rate_limit_error"
-	// ApiErr An unexpected error has occurred internal to Anthropic's systems.
-	ApiErr = "api_error"
-	// OverloadedErr Anthropic's API is temporarily overloaded.
-	OverloadedErr = "overloaded_error"
+	// ErrInvalidRequest There was an issue with the format or content of your request.
+	ErrInvalidRequest = "invalid_request_error"
+	// ErrAuthentication There's an issue with your API key.
+	ErrAuthentication = "authentication_error"
+	// ErrPermission Your API key does not have permission to use the specified resource.
+	ErrPermission = "permission_error"
+	// ErrNotFound The requested resource was not found.
+	ErrNotFound = "not_found_error"
+	// ErrRateLimit Your account has hit a rate limit.
+	ErrRateLimit = "rate_limit_error"
+	// ErrApi An unexpected error has occurred internal to Anthropic's systems.
+	ErrApi = "api_error"
+	// ErrOverloaded Anthropic's API is temporarily overloaded.
+	ErrOverloaded = "overloaded_error"
 )
 
 // APIError provides error information returned by the Anthropic API.
@@ -26,31 +26,31 @@ type APIError struct {
 }
 
 func (e *APIError) IsInvalidRequestErr() bool {
-	return e.Type == InvalidRequestErr
+	return e.Type == ErrInvalidRequest
 }
 
 func (e *APIError) IsAuthenticationErr() bool {
-	return e.Type == AuthenticationErr
+	return e.Type == ErrAuthentication
 }
 
 func (e *APIError) IsPermissionErr() bool {
-	return e.Type == PermissionErr
+	return e.Type == ErrPermission
 }
 
 func (e *APIError) IsNotFoundErr() bool {
-	return e.Type == NotFoundErr
+	return e.Type == ErrNotFound
 }
 
 func (e *APIError) IsRateLimitErr() bool {
-	return e.Type == RateLimitErr
+	return e.Type == ErrRateLimit
 }
 
 func (e *APIError) IsApiErr() bool {
-	return e.Type == ApiErr
+	return e.Type == ErrApi
 }
 
 func (e *APIError) IsOverloadedErr() bool {
-	return e.Type == OverloadedErr
+	return e.Type == ErrOverloaded
 }
 
 // RequestError provides information about generic request errors.
