@@ -29,27 +29,27 @@ func (e *APIError) IsInvalidRequestErr() bool {
 	return e.Type == InvalidRequestErr
 }
 
-func (e *APIError) AuthenticationErr() bool {
+func (e *APIError) IsAuthenticationErr() bool {
 	return e.Type == AuthenticationErr
 }
 
-func (e *APIError) PermissionErr() bool {
+func (e *APIError) IsPermissionErr() bool {
 	return e.Type == PermissionErr
 }
 
-func (e *APIError) NotFoundErr() bool {
+func (e *APIError) IsNotFoundErr() bool {
 	return e.Type == NotFoundErr
 }
 
-func (e *APIError) RateLimitErr() bool {
+func (e *APIError) IsRateLimitErr() bool {
 	return e.Type == RateLimitErr
 }
 
-func (e *APIError) ApiErr() bool {
+func (e *APIError) IsApiErr() bool {
 	return e.Type == ApiErr
 }
 
-func (e *APIError) OverloadedErr() bool {
+func (e *APIError) IsOverloadedErr() bool {
 	return e.Type == OverloadedErr
 }
 
