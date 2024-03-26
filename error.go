@@ -2,55 +2,57 @@ package anthropic
 
 import "fmt"
 
+type ErrType string
+
 const (
-	// ErrInvalidRequest There was an issue with the format or content of your request.
-	ErrInvalidRequest = "invalid_request_error"
-	// ErrAuthentication There's an issue with your API key.
-	ErrAuthentication = "authentication_error"
-	// ErrPermission Your API key does not have permission to use the specified resource.
-	ErrPermission = "permission_error"
-	// ErrNotFound The requested resource was not found.
-	ErrNotFound = "not_found_error"
-	// ErrRateLimit Your account has hit a rate limit.
-	ErrRateLimit = "rate_limit_error"
-	// ErrApi An unexpected error has occurred internal to Anthropic's systems.
-	ErrApi = "api_error"
-	// ErrOverloaded Anthropic's API is temporarily overloaded.
-	ErrOverloaded = "overloaded_error"
+	// ErrTypeInvalidRequest There was an issue with the format or content of your request.
+	ErrTypeInvalidRequest ErrType = "invalid_request_error"
+	// ErrTypeAuthentication There's an issue with your API key.
+	ErrTypeAuthentication ErrType = "authentication_error"
+	// ErrTypePermission Your API key does not have permission to use the specified resource.
+	ErrTypePermission ErrType = "permission_error"
+	// ErrTypeNotFound The requested resource was not found.
+	ErrTypeNotFound ErrType = "not_found_error"
+	// ErrTypeRateLimit Your account has hit a rate limit.
+	ErrTypeRateLimit ErrType = "rate_limit_error"
+	// ErrTypeApi An unexpected error has occurred internal to Anthropic's systems.
+	ErrTypeApi ErrType = "api_error"
+	// ErrTypeOverloaded Anthropic's API is temporarily overloaded.
+	ErrTypeOverloaded ErrType = "overloaded_error"
 )
 
 // APIError provides error information returned by the Anthropic API.
 type APIError struct {
-	Type    string `json:"type"`
-	Message string `json:"message"`
+	Type    ErrType `json:"type"`
+	Message string  `json:"message"`
 }
 
 func (e *APIError) IsInvalidRequestErr() bool {
-	return e.Type == ErrInvalidRequest
+	return e.Type == ErrTypeInvalidRequest
 }
 
 func (e *APIError) IsAuthenticationErr() bool {
-	return e.Type == ErrAuthentication
+	return e.Type == ErrTypeAuthentication
 }
 
 func (e *APIError) IsPermissionErr() bool {
-	return e.Type == ErrPermission
+	return e.Type == ErrTypePermission
 }
 
 func (e *APIError) IsNotFoundErr() bool {
-	return e.Type == ErrNotFound
+	return e.Type == ErrTypeNotFound
 }
 
 func (e *APIError) IsRateLimitErr() bool {
-	return e.Type == ErrRateLimit
+	return e.Type == ErrTypeRateLimit
 }
 
 func (e *APIError) IsApiErr() bool {
-	return e.Type == ErrApi
+	return e.Type == ErrTypeApi
 }
 
 func (e *APIError) IsOverloadedErr() bool {
-	return e.Type == ErrOverloaded
+	return e.Type == ErrTypeOverloaded
 }
 
 // RequestError provides information about generic request errors.
