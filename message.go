@@ -175,9 +175,9 @@ type MessageContentImageSource struct {
 }
 
 type MessageContentToolUse struct {
-	ID    string         `json:"id,omitempty"`
-	Name  string         `json:"name,omitempty"`
-	Input map[string]any `json:"input,omitempty"`
+	ID    string `json:"id,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Input any    `json:"input,omitempty"`
 }
 
 type MessagesResponse struct {
