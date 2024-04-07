@@ -12,11 +12,12 @@ Anthropic Claude API wrapper for Go (Unofficial). Support:
 - Messages
 - Streaming Messages
 - Vision
+- Tool use
 
 ## Installation
 
 ```
-go get github.com/liushuangls/go-anthropic
+go get github.com/liushuangls/go-anthropic/v2
 ```
 
 Currently, go-anthropic requires Go version 1.21 or greater.
