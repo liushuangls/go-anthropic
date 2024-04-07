@@ -33,7 +33,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/liushuangls/go-anthropic"
+	"github.com/liushuangls/go-anthropic/v2"
 )
 
 func main() {
@@ -67,7 +67,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/liushuangls/go-anthropic"
+	"github.com/liushuangls/go-anthropic/v2"
 )
 
 func main() {
@@ -109,7 +109,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/liushuangls/go-anthropic"
+	"github.com/liushuangls/go-anthropic/v2"
 )
 
 func main() {
@@ -168,8 +168,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/liushuangls/go-anthropic"
-	"github.com/liushuangls/go-anthropic/jsonschema"
+	"github.com/liushuangls/go-anthropic/v2"
+	"github.com/liushuangls/go-anthropic/v2/jsonschema"
 )
 
 func main() {

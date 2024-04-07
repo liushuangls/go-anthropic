@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/liushuangls/go-anthropic"
-	"github.com/liushuangls/go-anthropic/internal/test"
-	"github.com/liushuangls/go-anthropic/internal/test/checks"
-	"github.com/liushuangls/go-anthropic/jsonschema"
+	"github.com/liushuangls/go-anthropic/v2"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
+	"github.com/liushuangls/go-anthropic/v2/internal/test/checks"
+	"github.com/liushuangls/go-anthropic/v2/jsonschema"
 )
 
 //go:embed internal/test/sources/*

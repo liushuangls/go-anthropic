@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/liushuangls/go-anthropic"
-	"github.com/liushuangls/go-anthropic/internal/test"
+	"github.com/liushuangls/go-anthropic/v2"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
 )
 
 var (
