@@ -60,7 +60,15 @@ func (c *Client) fullURL(suffix string) string {
 	return fmt.Sprintf("%s%s", c.config.BaseURL, suffix)
 }
 
-func (c *Client) newRequest(ctx context.Context, method, urlSuffix string, body any) (req *http.Request, err error) {
+type requestSetter func(req *http.Request)
+
+func withBetaVersion(version string) requestSetter {
+	return func(req *http.Request) {
+		req.Header.Set("anthropic-beta", version)
+	}
+}
+
+func (c *Client) newRequest(ctx context.Context, method, urlSuffix string, body any, requestSetters ...requestSetter) (req *http.Request, err error) {
 	var reqBody []byte
 	if body != nil {
 		reqBody, err = json.Marshal(body)
@@ -78,6 +86,10 @@ func (c *Client) newRequest(ctx context.Context, method, urlSuffix string, body 
 	req.Header.Set("Accept", "application/json; charset=utf-8")
 	req.Header.Set("X-Api-Key", c.config.apikey)
 	req.Header.Set("Anthropic-Version", c.config.APIVersion)
+
+	for _, setter := range requestSetters {
+		setter(req)
+	}
 
 	return req, nil
 }

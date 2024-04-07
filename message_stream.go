@@ -52,9 +52,9 @@ type MessagesEventMessageStartData struct {
 }
 
 type MessagesEventContentBlockStartData struct {
-	Type         MessagesEvent   `json:"type"`
-	Index        int             `json:"index"`
-	ContentBlock MessagesContent `json:"content_block"`
+	Type         MessagesEvent  `json:"type"`
+	Index        int            `json:"index"`
+	ContentBlock MessageContent `json:"content_block"`
 }
 
 type MessagesEventPingData struct {
@@ -62,9 +62,9 @@ type MessagesEventPingData struct {
 }
 
 type MessagesEventContentBlockDeltaData struct {
-	Type  string          `json:"type"`
-	Index int             `json:"index"`
-	Delta MessagesContent `json:"delta"`
+	Type  string         `json:"type"`
+	Index int            `json:"index"`
+	Delta MessageContent `json:"delta"`
 }
 
 type MessagesEventContentBlockStopData struct {
@@ -84,6 +84,10 @@ type MessagesEventMessageStopData struct {
 
 func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStreamRequest) (response MessagesResponse, err error) {
 	request.Stream = true
+
+	if len(request.Tools) > 0 {
+		return response, ErrSteamingNotSupportTools
+	}
 
 	urlSuffix := "/messages"
 	req, err := c.newStreamRequest(ctx, http.MethodPost, urlSuffix, request)
@@ -177,7 +181,7 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 				if len(response.Content)-1 < d.Index {
 					response.Content = slices.Insert(response.Content, d.Index, d.Delta)
 				} else {
-					response.Content[d.Index].Text += d.Delta.Text
+					response.Content[d.Index].ConcatText(d.Delta.GetText())
 				}
 				continue
 			case MessagesEventContentBlockStop:

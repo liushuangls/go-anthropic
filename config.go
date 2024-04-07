@@ -13,13 +13,18 @@ const (
 	APIVersion20230601 = "2023-06-01"
 )
 
+const (
+	BetaTools20240404 = "tools-2024-04-04"
+)
+
 // ClientConfig is a configuration of a client.
 type ClientConfig struct {
 	apikey string
 
-	BaseURL    string
-	APIVersion string
-	HTTPClient *http.Client
+	BaseURL     string
+	APIVersion  string
+	BetaVersion string
+	HTTPClient  *http.Client
 
 	EmptyMessagesLimit uint
 }
@@ -30,9 +35,10 @@ func newConfig(apikey string, opts ...ClientOption) ClientConfig {
 	c := ClientConfig{
 		apikey: apikey,
 
-		BaseURL:    anthropicAPIURLv1,
-		APIVersion: APIVersion20230601,
-		HTTPClient: &http.Client{},
+		BaseURL:     anthropicAPIURLv1,
+		APIVersion:  APIVersion20230601,
+		BetaVersion: BetaTools20240404,
+		HTTPClient:  &http.Client{},
 
 		EmptyMessagesLimit: defaultEmptyMessagesLimit,
 	}
@@ -65,5 +71,11 @@ func WithHTTPClient(cli *http.Client) ClientOption {
 func WithEmptyMessagesLimit(limit uint) ClientOption {
 	return func(c *ClientConfig) {
 		c.EmptyMessagesLimit = limit
+	}
+}
+
+func WithBetaVersion(betaVersion string) ClientOption {
+	return func(c *ClientConfig) {
+		c.BetaVersion = betaVersion
 	}
 }

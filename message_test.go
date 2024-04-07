@@ -8,12 +8,14 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/liushuangls/go-anthropic"
 	"github.com/liushuangls/go-anthropic/internal/test"
 	"github.com/liushuangls/go-anthropic/internal/test/checks"
+	"github.com/liushuangls/go-anthropic/jsonschema"
 )
 
 //go:embed internal/test/sources/*
@@ -127,6 +129,97 @@ func TestMessagesVision(t *testing.T) {
 	t.Logf("CreateMessages resp: %+v", resp)
 }
 
+func TestMessagesToolUse(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	request := anthropic.MessagesRequest{
+		Model: anthropic.ModelClaude3Haiku20240307,
+		Messages: []anthropic.Message{
+			anthropic.NewUserTextMessage("What is the weather like in San Francisco?"),
+		},
+		MaxTokens: 1000,
+		Tools: []anthropic.ToolDefinition{
+			{
+				Name:        "get_weather",
+				Description: "Get the current weather in a given location",
+				InputSchema: jsonschema.Definition{
+					Type: jsonschema.Object,
+					Properties: map[string]jsonschema.Definition{
+						"location": {
+							Type:        jsonschema.String,
+							Description: "The city and state, e.g. San Francisco, CA",
+						},
+						"unit": {
+							Type:        jsonschema.String,
+							Enum:        []string{"celsius", "fahrenheit"},
+							Description: "The unit of temperature, either 'celsius' or 'fahrenheit'",
+						},
+					},
+					Required: []string{"location"},
+				},
+			},
+		},
+	}
+
+	resp, err := client.CreateMessages(context.Background(), request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	request.Messages = append(request.Messages, anthropic.Message{
+		Role:    anthropic.RoleAssistant,
+		Content: resp.Content,
+	})
+
+	var toolUse *anthropic.MessageContentToolUse
+
+	for _, c := range resp.Content {
+		if c.Type == anthropic.MessagesContentTypeToolUse {
+			toolUse = c.MessageContentToolUse
+			t.Logf("ToolUse: %+v", toolUse)
+		} else {
+			t.Logf("Content: %+v", c)
+		}
+	}
+
+	if toolUse == nil {
+		t.Fatal("tool use not found")
+	}
+
+	request.Messages = append(request.Messages, anthropic.NewToolResultsMessage(toolUse.ID, "65 degrees", false))
+
+	resp, err = client.CreateMessages(context.Background(), request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("CreateMessages resp: %+v", resp)
+
+	var hasDegrees bool
+	for _, m := range resp.Content {
+		if m.Type == anthropic.MessagesContentTypeText {
+			if strings.Contains(m.GetText(), "65 degrees") {
+				hasDegrees = true
+				break
+			}
+		}
+	}
+	if !hasDegrees {
+		t.Fatalf("Expected response to contain '65 degrees', got: %+v", resp.Content)
+	}
+}
+
 func handleMessagesEndpoint(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var resBytes []byte
@@ -142,20 +235,49 @@ func handleMessagesEndpoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var hasToolResult bool
+
+	for _, m := range messagesReq.Messages {
+		for _, c := range m.Content {
+			if c.Type == anthropic.MessagesContentTypeToolResult {
+				hasToolResult = true
+				break
+			}
+		}
+	}
+
 	res := anthropic.MessagesResponse{
 		Type: "completion",
 		ID:   strconv.Itoa(int(time.Now().Unix())),
 		Role: anthropic.RoleAssistant,
-		Content: []anthropic.MessagesContent{
-			{Type: "text", Text: "hello"},
+		Content: []anthropic.MessageContent{
+			anthropic.NewTextMessageContent("hello"),
 		},
-		StopReason: "end_turn",
+		StopReason: anthropic.MessagesStopReasonEndTurn,
 		Model:      messagesReq.Model,
 		Usage: anthropic.MessagesUsage{
 			InputTokens:  10,
 			OutputTokens: 10,
 		},
 	}
+
+	if len(messagesReq.Tools) > 0 {
+		if hasToolResult {
+			res.Content = []anthropic.MessageContent{
+				anthropic.NewTextMessageContent("The current weather in San Francisco is 65 degrees Fahrenheit. It's a nice, moderate temperature typical of the San Francisco Bay Area climate."),
+			}
+		} else {
+			res.Content = []anthropic.MessageContent{
+				anthropic.NewTextMessageContent("Okay, let me check the weather in San Francisco:"),
+				anthropic.NewToolUseMessageContent("toolu_01Ex86JyJAe8RSbFRCTM3pQo", "get_weather", map[string]any{
+					"location": "San Francisco, CA",
+					"unit":     "fahrenheit",
+				}),
+			}
+			res.StopReason = anthropic.MessagesStopReasonToolUse
+		}
+	}
+
 	resBytes, _ = json.Marshal(res)
 	_, _ = w.Write(resBytes)
 }

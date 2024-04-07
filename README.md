@@ -96,7 +96,10 @@ func main() {
 }
 ```
 
-### Messages Vision example usage:
+### Other examples:
+
+<details>
+<summary>Messages Vision example</summary>
 
 ```go
 package main
@@ -151,6 +154,90 @@ func main() {
 	fmt.Println(resp.Content[0].Text)
 }
 ```
+</details>
+
+<details>
+
+<summary>Messages Tool use example</summary>
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/liushuangls/go-anthropic"
+	"github.com/liushuangls/go-anthropic/jsonschema"
+)
+
+func main() {
+	client := anthropic.NewClient(
+		"your anthropic apikey",
+	)
+
+	request := anthropic.MessagesRequest{
+		Model: anthropic.ModelClaude3Haiku20240307,
+		Messages: []anthropic.Message{
+			anthropic.NewUserTextMessage("What is the weather like in San Francisco?"),
+		},
+		MaxTokens: 1000,
+		Tools: []anthropic.ToolDefinition{
+			{
+				Name:        "get_weather",
+				Description: "Get the current weather in a given location",
+				InputSchema: jsonschema.Definition{
+					Type: jsonschema.Object,
+					Properties: map[string]jsonschema.Definition{
+						"location": {
+							Type:        jsonschema.String,
+							Description: "The city and state, e.g. San Francisco, CA",
+						},
+						"unit": {
+							Type:        jsonschema.String,
+							Enum:        []string{"celsius", "fahrenheit"},
+							Description: "The unit of temperature, either 'celsius' or 'fahrenheit'",
+						},
+					},
+					Required: []string{"location"},
+				},
+			},
+		},
+	}
+
+	resp, err := client.CreateMessages(context.Background(), request)
+	if err != nil {
+		panic(err)
+	}
+
+	request.Messages = append(request.Messages, anthropic.Message{
+		Role:    anthropic.RoleAssistant,
+		Content: resp.Content,
+	})
+
+	var toolUse *anthropic.MessageContentToolUse
+
+	for _, c := range resp.Content {
+		if c.Type == anthropic.MessagesContentTypeToolUse {
+			toolUse = c.MessageContentToolUse
+		}
+	}
+
+	if toolUse == nil {
+		panic("tool use not found")
+	}
+
+	request.Messages = append(request.Messages, anthropic.NewToolResultsMessage(toolUse.ID, "65 degrees", false))
+
+	resp, err = client.CreateMessages(context.Background(), request)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Response: %+v\n", resp)
+}
+```
+
+</details>
 
 ## Acknowledgments
 The following project had particular influence on go-anthropic is design.

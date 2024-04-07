@@ -38,7 +38,7 @@ func TestMessagesStream(t *testing.T) {
 			MaxTokens: 1000,
 		},
 		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
-			received += data.Delta.Text
+			received += data.Delta.GetText()
 			//t.Logf("CreateMessagesStream delta resp: %+v", data)
 		},
 		OnError:             func(response anthropic.ErrorResponse) {},

@@ -1,6 +1,9 @@
 package anthropic
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type ErrType string
 
@@ -19,6 +22,10 @@ const (
 	ErrTypeApi ErrType = "api_error"
 	// ErrTypeOverloaded Anthropic's API is temporarily overloaded.
 	ErrTypeOverloaded ErrType = "overloaded_error"
+)
+
+var (
+	ErrSteamingNotSupportTools = errors.New("streaming is not yet supported tools")
 )
 
 // APIError provides error information returned by the Anthropic API.
