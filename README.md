@@ -1,7 +1,7 @@
 # go-anthropic
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/liushuangls/go-anthropic.svg)](https://pkg.go.dev/github.com/liushuangls/go-anthropic)
-[![Go Report Card](https://goreportcard.com/badge/github.com/liushuangls/go-anthropic)](https://goreportcard.com/report/github.com/liushuangls/go-anthropic)
+[![Go Reference](https://pkg.go.dev/badge/github.com/liushuangls/go-anthropic/v2.svg)](https://pkg.go.dev/github.com/liushuangls/go-anthropic/v2)
+[![Go Report Card](https://goreportcard.com/badge/github.com/liushuangls/go-anthropic/v2)](https://goreportcard.com/report/github.com/liushuangls/go-anthropic/v2)
 [![codecov](https://codecov.io/gh/liushuangls/go-anthropic/graph/badge.svg?token=O6JSAOZORX)](https://codecov.io/gh/liushuangls/go-anthropic)
 [![Sanity check](https://github.com/liushuangls/go-anthropic/actions/workflows/pr.yml/badge.svg)](https://github.com/liushuangls/go-anthropic/actions/workflows/pr.yml)
 
