@@ -181,6 +181,8 @@ type MessageContentToolUse struct {
 }
 
 type MessagesResponse struct {
+	httpHeader
+
 	ID           string               `json:"id"`
 	Type         MessagesResponseType `json:"type"`
 	Role         string               `json:"role"`

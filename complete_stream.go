@@ -43,10 +43,13 @@ func (c *Client) CreateCompleteStream(ctx context.Context, request CompleteStrea
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
+
+	response.SetHeader(resp.Header)
+
 	if err := c.handlerRequestError(resp); err != nil {
 		return response, err
 	}
-	defer resp.Body.Close()
 
 	reader := bufio.NewReader(resp.Body)
 	var (

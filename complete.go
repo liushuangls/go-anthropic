@@ -31,6 +31,8 @@ func (c *CompleteRequest) SetTopK(k int) {
 }
 
 type CompleteResponse struct {
+	httpHeader
+
 	Type       string `json:"type"`
 	ID         string `json:"id"`
 	Completion string `json:"completion"`
