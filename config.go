@@ -15,6 +15,7 @@ const (
 
 const (
 	BetaTools20240404 = "tools-2024-04-04"
+	BetaTools20240516 = "tools-2024-05-16"
 )
 
 // ClientConfig is a configuration of a client.
@@ -37,7 +38,7 @@ func newConfig(apikey string, opts ...ClientOption) ClientConfig {
 
 		BaseURL:     anthropicAPIURLv1,
 		APIVersion:  APIVersion20230601,
-		BetaVersion: BetaTools20240404,
+		BetaVersion: BetaTools20240516,
 		HTTPClient:  &http.Client{},
 
 		EmptyMessagesLimit: defaultEmptyMessagesLimit,

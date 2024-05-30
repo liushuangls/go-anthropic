@@ -2,6 +2,7 @@ package anthropic
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 )
 
@@ -15,10 +16,12 @@ const (
 type MessagesContentType string
 
 const (
-	MessagesContentTypeText       MessagesContentType = "text"
-	MessagesContentTypeImage      MessagesContentType = "image"
-	MessagesContentTypeToolResult MessagesContentType = "tool_result"
-	MessagesContentTypeToolUse    MessagesContentType = "tool_use"
+	MessagesContentTypeText           MessagesContentType = "text"
+	MessagesContentTypeTextDelta      MessagesContentType = "text_delta"
+	MessagesContentTypeImage          MessagesContentType = "image"
+	MessagesContentTypeToolResult     MessagesContentType = "tool_result"
+	MessagesContentTypeToolUse        MessagesContentType = "tool_use"
+	MessagesContentTypeInputJsonDelta MessagesContentType = "input_json_delta"
 )
 
 type MessagesStopReason string
@@ -43,6 +46,7 @@ type MessagesRequest struct {
 	TopP          *float32         `json:"top_p,omitempty"`
 	TopK          *int             `json:"top_k,omitempty"`
 	Tools         []ToolDefinition `json:"tools,omitempty"`
+	ToolChoice    *ToolChoice      `json:"tool_choice,omitempty"`
 }
 
 func (m *MessagesRequest) SetTemperature(t float32) {
@@ -100,6 +104,8 @@ type MessageContent struct {
 	*MessageContentToolResult
 
 	*MessageContentToolUse
+
+	PartialJson *string `json:"partial_json,omitempty"`
 }
 
 func NewTextMessageContent(text string) MessageContent {
@@ -123,7 +129,7 @@ func NewToolResultMessageContent(toolUseID, content string, isError bool) Messag
 	}
 }
 
-func NewToolUseMessageContent(toolUseID, name string, input map[string]any) MessageContent {
+func NewToolUseMessageContent(toolUseID, name string, input json.RawMessage) MessageContent {
 	return MessageContent{
 		Type: MessagesContentTypeToolUse,
 		MessageContentToolUse: &MessageContentToolUse{
@@ -146,6 +152,30 @@ func (m *MessageContent) ConcatText(s string) {
 		m.Text = &s
 	} else {
 		*m.Text += s
+	}
+}
+
+func (m *MessageContent) MergeContentDelta(mc MessageContent) {
+	switch mc.Type {
+	case MessagesContentTypeText:
+		m.ConcatText(mc.GetText())
+	case MessagesContentTypeTextDelta:
+		m.ConcatText(mc.GetText())
+	case MessagesContentTypeImage:
+		m.Source = mc.Source
+	case MessagesContentTypeToolResult:
+		m.MessageContentToolResult = mc.MessageContentToolResult
+	case MessagesContentTypeToolUse:
+		m.MessageContentToolUse = &MessageContentToolUse{
+			ID:   mc.MessageContentToolUse.ID,
+			Name: mc.MessageContentToolUse.Name,
+		}
+	case MessagesContentTypeInputJsonDelta:
+		if m.PartialJson == nil {
+			m.PartialJson = mc.PartialJson
+		} else {
+			*m.PartialJson += *mc.PartialJson
+		}
 	}
 }
 
@@ -175,9 +205,13 @@ type MessageContentImageSource struct {
 }
 
 type MessageContentToolUse struct {
-	ID    string `json:"id,omitempty"`
-	Name  string `json:"name,omitempty"`
-	Input any    `json:"input,omitempty"`
+	ID    string          `json:"id,omitempty"`
+	Name  string          `json:"name,omitempty"`
+	Input json.RawMessage `json:"input,omitempty"`
+}
+
+func (c *MessageContentToolUse) UnmarshalInput(v any) error {
+	return json.Unmarshal(c.Input, v)
 }
 
 type MessagesResponse struct {
@@ -215,6 +249,12 @@ type ToolDefinition struct {
 	// The jsonschema package is provided for convenience, but you should
 	// consider another specialized library if you require more complex schemas.
 	InputSchema any `json:"input_schema"`
+}
+
+type ToolChoice struct {
+	// oneof: auto(default) any tool
+	Type string `json:"type"`
+	Name string `json:"name,omitempty"`
 }
 
 func (c *Client) CreateMessages(ctx context.Context, request MessagesRequest) (response MessagesResponse, err error) {

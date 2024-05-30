@@ -267,12 +267,14 @@ func handleMessagesEndpoint(w http.ResponseWriter, r *http.Request) {
 				anthropic.NewTextMessageContent("The current weather in San Francisco is 65 degrees Fahrenheit. It's a nice, moderate temperature typical of the San Francisco Bay Area climate."),
 			}
 		} else {
+			m := map[string]any{
+				"location": "San Francisco, CA",
+				"unit":     "celsius",
+			}
+			bs, _ := json.Marshal(m)
 			res.Content = []anthropic.MessageContent{
 				anthropic.NewTextMessageContent("Okay, let me check the weather in San Francisco:"),
-				anthropic.NewToolUseMessageContent("toolu_01Ex86JyJAe8RSbFRCTM3pQo", "get_weather", map[string]any{
-					"location": "San Francisco, CA",
-					"unit":     "fahrenheit",
-				}),
+				anthropic.NewToolUseMessageContent("toolu_01Ex86JyJAe8RSbFRCTM3pQo", "get_weather", bs),
 			}
 			res.StopReason = anthropic.MessagesStopReasonToolUse
 		}

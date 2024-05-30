@@ -36,14 +36,14 @@ const (
 type MessagesStreamRequest struct {
 	MessagesRequest
 
-	OnError             func(ErrorResponse)                      `json:"-"`
-	OnPing              func(MessagesEventPingData)              `json:"-"`
-	OnMessageStart      func(MessagesEventMessageStartData)      `json:"-"`
-	OnContentBlockStart func(MessagesEventContentBlockStartData) `json:"-"`
-	OnContentBlockDelta func(MessagesEventContentBlockDeltaData) `json:"-"`
-	OnContentBlockStop  func(MessagesEventContentBlockStopData)  `json:"-"`
-	OnMessageDelta      func(MessagesEventMessageDeltaData)      `json:"-"`
-	OnMessageStop       func(MessagesEventMessageStopData)       `json:"-"`
+	OnError             func(ErrorResponse)                                     `json:"-"`
+	OnPing              func(MessagesEventPingData)                             `json:"-"`
+	OnMessageStart      func(MessagesEventMessageStartData)                     `json:"-"`
+	OnContentBlockStart func(MessagesEventContentBlockStartData)                `json:"-"`
+	OnContentBlockDelta func(MessagesEventContentBlockDeltaData)                `json:"-"`
+	OnContentBlockStop  func(MessagesEventContentBlockStopData, MessageContent) `json:"-"`
+	OnMessageDelta      func(MessagesEventMessageDeltaData)                     `json:"-"`
+	OnMessageStop       func(MessagesEventMessageStopData)                      `json:"-"`
 }
 
 type MessagesEventMessageStartData struct {
@@ -85,12 +85,13 @@ type MessagesEventMessageStopData struct {
 func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStreamRequest) (response MessagesResponse, err error) {
 	request.Stream = true
 
+	var setters []requestSetter
 	if len(request.Tools) > 0 {
-		return response, ErrSteamingNotSupportTools
+		setters = append(setters, withBetaVersion(c.config.BetaVersion))
 	}
 
 	urlSuffix := "/messages"
-	req, err := c.newStreamRequest(ctx, http.MethodPost, urlSuffix, request)
+	req, err := c.newStreamRequest(ctx, http.MethodPost, urlSuffix, request, setters...)
 	if err != nil {
 		return
 	}
@@ -184,7 +185,7 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 				if len(response.Content)-1 < d.Index {
 					response.Content = slices.Insert(response.Content, d.Index, d.Delta)
 				} else {
-					response.Content[d.Index].ConcatText(d.Delta.GetText())
+					response.Content[d.Index].MergeContentDelta(d.Delta)
 				}
 				continue
 			case MessagesEventContentBlockStop:
@@ -192,8 +193,17 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 				if err := json.Unmarshal(data, &d); err != nil {
 					return response, err
 				}
+				var stopContent MessageContent
+				if len(response.Content) > d.Index {
+					stopContent = response.Content[d.Index]
+					if stopContent.Type == MessagesContentTypeToolUse {
+						stopContent.Input = json.RawMessage(*stopContent.PartialJson)
+						stopContent.PartialJson = nil
+						response.Content[d.Index] = stopContent
+					}
+				}
 				if request.OnContentBlockStop != nil {
-					request.OnContentBlockStop(d)
+					request.OnContentBlockStop(d, stopContent)
 				}
 				continue
 			case MessagesEventMessageDelta:
