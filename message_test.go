@@ -21,6 +21,16 @@ import (
 //go:embed internal/test/sources/*
 var sources embed.FS
 
+var rateLimitHeaders = map[string]string{
+	"anthropic-ratelimit-requests-limit":     "100",
+	"anthropic-ratelimit-requests-remaining": "99",
+	"anthropic-ratelimit-requests-reset":     "2024-06-04T07:13:19Z",
+	"anthropic-ratelimit-tokens-limit":       "10000",
+	"anthropic-ratelimit-tokens-remaining":   "9900",
+	"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
+	"retry-after":                            "100",
+}
+
 func TestMessages(t *testing.T) {
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
@@ -220,6 +230,48 @@ func TestMessagesToolUse(t *testing.T) {
 	}
 }
 
+func TestMessagesRateLimitHeaders(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+		Model: anthropic.ModelClaude3Haiku20240307,
+		Messages: []anthropic.Message{
+			anthropic.NewUserTextMessage("What is your name?"),
+		},
+		MaxTokens: 1000,
+	})
+	if err != nil {
+		t.Fatalf("CreateMessages error: %v", err)
+	}
+
+	rateLimitHeaders := resp.GetRateLimitHeaders()
+
+	bs, err := json.Marshal(rateLimitHeaders)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bs2, err := json.Marshal(rateLimitHeaders)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(bs) != string(bs2) {
+		t.Fatalf("rate limit headers mismatch. got %s, want %s", string(bs), string(bs2))
+	}
+}
+
 func handleMessagesEndpoint(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var resBytes []byte
@@ -281,6 +333,9 @@ func handleMessagesEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resBytes, _ = json.Marshal(res)
+	for k, v := range rateLimitHeaders {
+		w.Header().Set(k, v)
+	}
 	_, _ = w.Write(resBytes)
 }
 

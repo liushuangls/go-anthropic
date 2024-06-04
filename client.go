@@ -26,6 +26,10 @@ func (h *httpHeader) Header() http.Header {
 	return http.Header(*h)
 }
 
+func (h *httpHeader) GetRateLimitHeaders() RateLimitHeaders {
+	return newRateLimitHeaders(h.Header())
+}
+
 // NewClient create new Anthropic API client
 func NewClient(apikey string, opts ...ClientOption) *Client {
 	return &Client{
