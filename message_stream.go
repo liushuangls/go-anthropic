@@ -86,7 +86,7 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 	request.Stream = true
 
 	var setters []requestSetter
-	if len(request.Tools) > 0 {
+	if len(c.config.BetaVersion) > 0 {
 		setters = append(setters, withBetaVersion(c.config.BetaVersion))
 	}
 

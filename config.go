@@ -36,10 +36,9 @@ func newConfig(apikey string, opts ...ClientOption) ClientConfig {
 	c := ClientConfig{
 		apikey: apikey,
 
-		BaseURL:     anthropicAPIURLv1,
-		APIVersion:  APIVersion20230601,
-		BetaVersion: BetaTools20240516,
-		HTTPClient:  &http.Client{},
+		BaseURL:    anthropicAPIURLv1,
+		APIVersion: APIVersion20230601,
+		HTTPClient: &http.Client{},
 
 		EmptyMessagesLimit: defaultEmptyMessagesLimit,
 	}
