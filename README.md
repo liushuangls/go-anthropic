@@ -54,7 +54,7 @@ func main() {
         }
 		return
 	}
-	fmt.Println(resp.Content[0].Text)
+	fmt.Println(*resp.Content[0].Text)
 }
 ```
 
@@ -93,7 +93,7 @@ func main() {
         }
 		return
 	}
-	fmt.Println(resp.Content[0].Text)
+	fmt.Println(*resp.Content[0].Text)
 }
 ```
 
