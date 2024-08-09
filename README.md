@@ -54,7 +54,7 @@ func main() {
         }
 		return
 	}
-	fmt.Println(resp.Content[0].Text)
+	fmt.Println(resp.Content[0].GetText())
 }
 ```
 
@@ -93,7 +93,7 @@ func main() {
         }
 		return
 	}
-	fmt.Println(resp.Content[0].Text)
+	fmt.Println(resp.Content[0].GetText())
 }
 ```
 
@@ -244,4 +244,3 @@ func main() {
 The following project had particular influence on go-anthropic is design.
 
 - [sashabaranov/go-openai](https://github.com/sashabaranov/go-openai)
-
