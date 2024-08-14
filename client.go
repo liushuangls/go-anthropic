@@ -26,7 +26,7 @@ func (h *httpHeader) Header() http.Header {
 	return http.Header(*h)
 }
 
-func (h *httpHeader) GetRateLimitHeaders() RateLimitHeaders {
+func (h *httpHeader) GetRateLimitHeaders() (RateLimitHeaders, error) {
 	return newRateLimitHeaders(h.Header())
 }
 
