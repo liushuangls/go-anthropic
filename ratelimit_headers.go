@@ -23,18 +23,27 @@ type RateLimitHeaders struct {
 	RetryAfter int `json:"retry-after"`
 }
 
-func newRateLimitHeaders(h http.Header) RateLimitHeaders {
-	requestsLimit, _ := strconv.Atoi(h.Get("anthropic-ratelimit-requests-limit"))
-	requestsRemaining, _ := strconv.Atoi(h.Get("anthropic-ratelimit-requests-remaining"))
-	requestsReset, _ := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-requests-reset"))
+func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
+	errs := []error{}
 
-	tokensLimit, _ := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-limit"))
-	tokensRemaining, _ := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-remaining"))
-	tokensReset, _ := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-tokens-reset"))
+	requestsLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-limit"))
+	errs = append(errs, err)
+	requestsRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-remaining"))
+	errs = append(errs, err)
+	requestsReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-requests-reset"))
+	errs = append(errs, err)
 
-	retryAfter, _ := strconv.Atoi(h.Get("anthropic-ratelimit-retry-after"))
+	tokensLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-limit"))
+	errs = append(errs, err)
+	tokensRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-remaining"))
+	errs = append(errs, err)
+	tokensReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-tokens-reset"))
+	errs = append(errs, err)
 
-	return RateLimitHeaders{
+	retryAfter, err := strconv.Atoi(h.Get("retry-after"))
+	errs = append(errs, err)
+
+	headers := RateLimitHeaders{
 		RequestsLimit:     requestsLimit,
 		RequestsRemaining: requestsRemaining,
 		RequestsReset:     requestsReset,
@@ -43,4 +52,11 @@ func newRateLimitHeaders(h http.Header) RateLimitHeaders {
 		TokensReset:       tokensReset,
 		RetryAfter:        retryAfter,
 	}
+
+	for _, e := range errs {
+		if e != nil {
+			return headers, e
+		}
+	}
+	return headers, nil
 }

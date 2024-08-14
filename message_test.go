@@ -255,14 +255,27 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 		t.Fatalf("CreateMessages error: %v", err)
 	}
 
-	rateLimitHeaders := resp.GetRateLimitHeaders()
+	rlHeaders, err := resp.GetRateLimitHeaders()
+	if err != nil {
+		t.Fatalf("GetRateLimitHeaders error: %v", err)
+	}
 
-	bs, err := json.Marshal(rateLimitHeaders)
+	bs, err := json.Marshal(rlHeaders)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	bs2, err := json.Marshal(rateLimitHeaders)
+	var expected = map[string]any{
+		"anthropic-ratelimit-requests-limit":     100,
+		"anthropic-ratelimit-requests-remaining": 99,
+		"anthropic-ratelimit-requests-reset":     "2024-06-04T07:13:19Z",
+		"anthropic-ratelimit-tokens-limit":       10000,
+		"anthropic-ratelimit-tokens-remaining":   9900,
+		"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
+		"retry-after":                            100,
+	}
+
+	bs2, err := json.Marshal(expected)
 	if err != nil {
 		t.Fatal(err)
 	}
