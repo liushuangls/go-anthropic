@@ -33,7 +33,7 @@ var rateLimitHeaders = map[string]string{
 
 func TestMessages(t *testing.T) {
 	server := test.NewTestServer()
-	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
 	ts := server.AnthropicTestServer()
 	ts.Start()
@@ -63,7 +63,7 @@ func TestMessages(t *testing.T) {
 
 func TestMessagesTokenError(t *testing.T) {
 	server := test.NewTestServer()
-	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
 	ts := server.AnthropicTestServer()
 	ts.Start()
@@ -93,7 +93,7 @@ func TestMessagesTokenError(t *testing.T) {
 
 func TestMessagesVision(t *testing.T) {
 	server := test.NewTestServer()
-	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
 	ts := server.AnthropicTestServer()
 	ts.Start()
@@ -141,7 +141,7 @@ func TestMessagesVision(t *testing.T) {
 
 func TestMessagesToolUse(t *testing.T) {
 	server := test.NewTestServer()
-	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
 	ts := server.AnthropicTestServer()
 	ts.Start()
@@ -231,125 +231,166 @@ func TestMessagesToolUse(t *testing.T) {
 }
 
 func TestMessagesRateLimitHeaders(t *testing.T) {
-	server := test.NewTestServer()
-	server.RegisterHandler("/v1/messages", handleMessagesEndpoint)
 
-	ts := server.AnthropicTestServer()
-	ts.Start()
-	defer ts.Close()
+	t.Run("parses valid rate limit headers", func(t *testing.T) {
 
-	baseUrl := ts.URL + "/v1"
-	client := anthropic.NewClient(
-		test.GetTestToken(),
-		anthropic.WithBaseURL(baseUrl),
-	)
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
-	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-		Model: anthropic.ModelClaude3Haiku20240307,
-		Messages: []anthropic.Message{
-			anthropic.NewUserTextMessage("What is your name?"),
-		},
-		MaxTokens: 1000,
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
+
+		baseUrl := ts.URL + "/v1"
+		client := anthropic.NewClient(
+			test.GetTestToken(),
+			anthropic.WithBaseURL(baseUrl),
+		)
+
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		rlHeaders, err := resp.GetRateLimitHeaders()
+		if err != nil {
+			t.Fatalf("GetRateLimitHeaders error: %v", err)
+		}
+
+		bs, err := json.Marshal(rlHeaders)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var expectedHeaders = map[string]any{
+			"anthropic-ratelimit-requests-limit":     100,
+			"anthropic-ratelimit-requests-remaining": 99,
+			"anthropic-ratelimit-requests-reset":     "2024-06-04T07:13:19Z",
+			"anthropic-ratelimit-tokens-limit":       10000,
+			"anthropic-ratelimit-tokens-remaining":   9900,
+			"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
+			"retry-after":                            100,
+		}
+
+		bs2, err := json.Marshal(expectedHeaders)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if string(bs) != string(bs2) {
+			t.Fatalf("rate limit headers mismatch. got %s, want %s", string(bs), string(bs2))
+		}
 	})
-	if err != nil {
-		t.Fatalf("CreateMessages error: %v", err)
-	}
 
-	rlHeaders, err := resp.GetRateLimitHeaders()
-	if err != nil {
-		t.Fatalf("GetRateLimitHeaders error: %v", err)
-	}
+	t.Run("returns error for missing rate limit headers", func(t *testing.T) {
 
-	bs, err := json.Marshal(rlHeaders)
-	if err != nil {
-		t.Fatal(err)
-	}
+		invalidHeaders := map[string]string{}
 
-	var expected = map[string]any{
-		"anthropic-ratelimit-requests-limit":     100,
-		"anthropic-ratelimit-requests-remaining": 99,
-		"anthropic-ratelimit-requests-reset":     "2024-06-04T07:13:19Z",
-		"anthropic-ratelimit-tokens-limit":       10000,
-		"anthropic-ratelimit-tokens-remaining":   9900,
-		"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
-		"retry-after":                            100,
-	}
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages", handleMessagesEndpoint(invalidHeaders))
 
-	bs2, err := json.Marshal(expected)
-	if err != nil {
-		t.Fatal(err)
-	}
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
 
-	if string(bs) != string(bs2) {
-		t.Fatalf("rate limit headers mismatch. got %s, want %s", string(bs), string(bs2))
-	}
+		baseUrl := ts.URL + "/v1"
+		client := anthropic.NewClient(
+			test.GetTestToken(),
+			anthropic.WithBaseURL(baseUrl),
+		)
+
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		_, err = resp.GetRateLimitHeaders()
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
 }
 
-func handleMessagesEndpoint(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var resBytes []byte
+// Allows for injection of custom rate limit headers in the response to test client parsing.
+func handleMessagesEndpoint(headers map[string]string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		var resBytes []byte
 
-	// completions only accepts POST requests
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
+		// completions only accepts POST requests
+		if r.Method != "POST" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 
-	var messagesReq anthropic.MessagesRequest
-	if messagesReq, err = getMessagesRequest(r); err != nil {
-		http.Error(w, "could not read request", http.StatusInternalServerError)
-		return
-	}
+		var messagesReq anthropic.MessagesRequest
+		if messagesReq, err = getMessagesRequest(r); err != nil {
+			http.Error(w, "could not read request", http.StatusInternalServerError)
+			return
+		}
 
-	var hasToolResult bool
+		var hasToolResult bool
 
-	for _, m := range messagesReq.Messages {
-		for _, c := range m.Content {
-			if c.Type == anthropic.MessagesContentTypeToolResult {
-				hasToolResult = true
-				break
+		for _, m := range messagesReq.Messages {
+			for _, c := range m.Content {
+				if c.Type == anthropic.MessagesContentTypeToolResult {
+					hasToolResult = true
+					break
+				}
 			}
 		}
-	}
 
-	res := anthropic.MessagesResponse{
-		Type: "completion",
-		ID:   strconv.Itoa(int(time.Now().Unix())),
-		Role: anthropic.RoleAssistant,
-		Content: []anthropic.MessageContent{
-			anthropic.NewTextMessageContent("hello"),
-		},
-		StopReason: anthropic.MessagesStopReasonEndTurn,
-		Model:      messagesReq.Model,
-		Usage: anthropic.MessagesUsage{
-			InputTokens:  10,
-			OutputTokens: 10,
-		},
-	}
-
-	if len(messagesReq.Tools) > 0 {
-		if hasToolResult {
-			res.Content = []anthropic.MessageContent{
-				anthropic.NewTextMessageContent("The current weather in San Francisco is 65 degrees Fahrenheit. It's a nice, moderate temperature typical of the San Francisco Bay Area climate."),
-			}
-		} else {
-			m := map[string]any{
-				"location": "San Francisco, CA",
-				"unit":     "celsius",
-			}
-			bs, _ := json.Marshal(m)
-			res.Content = []anthropic.MessageContent{
-				anthropic.NewTextMessageContent("Okay, let me check the weather in San Francisco:"),
-				anthropic.NewToolUseMessageContent("toolu_01Ex86JyJAe8RSbFRCTM3pQo", "get_weather", bs),
-			}
-			res.StopReason = anthropic.MessagesStopReasonToolUse
+		res := anthropic.MessagesResponse{
+			Type: "completion",
+			ID:   strconv.Itoa(int(time.Now().Unix())),
+			Role: anthropic.RoleAssistant,
+			Content: []anthropic.MessageContent{
+				anthropic.NewTextMessageContent("hello"),
+			},
+			StopReason: anthropic.MessagesStopReasonEndTurn,
+			Model:      messagesReq.Model,
+			Usage: anthropic.MessagesUsage{
+				InputTokens:  10,
+				OutputTokens: 10,
+			},
 		}
-	}
 
-	resBytes, _ = json.Marshal(res)
-	for k, v := range rateLimitHeaders {
-		w.Header().Set(k, v)
+		if len(messagesReq.Tools) > 0 {
+			if hasToolResult {
+				res.Content = []anthropic.MessageContent{
+					anthropic.NewTextMessageContent("The current weather in San Francisco is 65 degrees Fahrenheit. It's a nice, moderate temperature typical of the San Francisco Bay Area climate."),
+				}
+			} else {
+				m := map[string]any{
+					"location": "San Francisco, CA",
+					"unit":     "celsius",
+				}
+				bs, _ := json.Marshal(m)
+				res.Content = []anthropic.MessageContent{
+					anthropic.NewTextMessageContent("Okay, let me check the weather in San Francisco:"),
+					anthropic.NewToolUseMessageContent("toolu_01Ex86JyJAe8RSbFRCTM3pQo", "get_weather", bs),
+				}
+				res.StopReason = anthropic.MessagesStopReasonToolUse
+			}
+		}
+
+		resBytes, _ = json.Marshal(res)
+		for k, v := range headers {
+			w.Header().Set(k, v)
+		}
+		_, _ = w.Write(resBytes)
 	}
-	_, _ = w.Write(resBytes)
 }
 
 func getMessagesRequest(r *http.Request) (req anthropic.MessagesRequest, err error) {
