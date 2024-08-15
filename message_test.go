@@ -323,6 +323,49 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 	})
 }
 
+func TestMessagesWithCaching(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithAPIVersion(anthropic.APIVersion20230601),
+		anthropic.WithEmptyMessagesLimit(100),
+		anthropic.WithHTTPClient(http.DefaultClient),
+	)
+
+	text := "What is your name?"
+	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+		Model: anthropic.ModelClaudeInstant1Dot2,
+		Messages: []anthropic.Message{
+			{
+				Role: anthropic.RoleUser,
+				Content: []anthropic.MessageContent{
+					{
+						Type: anthropic.MessagesContentTypeText,
+						Text: &text,
+						CacheControl: &anthropic.CacheControl{
+							Type: "ephemeral",
+						},
+					},
+				},
+			},
+		},
+		MaxTokens: 1000,
+	})
+	if err != nil {
+		t.Fatalf("CreateMessages error: %v", err)
+	}
+
+	t.Logf("CreateMessages resp: %+v", resp)
+}
+
 // Allows for injection of custom rate limit headers in the response to test client parsing.
 func handleMessagesEndpoint(headers map[string]string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {

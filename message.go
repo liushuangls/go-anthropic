@@ -94,6 +94,10 @@ func (m Message) GetFirstContent() MessageContent {
 	return m.Content[0]
 }
 
+type CacheControl struct {
+	Type string `json:"type"`
+}
+
 type MessageContent struct {
 	Type MessagesContentType `json:"type"`
 
@@ -106,6 +110,8 @@ type MessageContent struct {
 	*MessageContentToolUse
 
 	PartialJson *string `json:"partial_json,omitempty"`
+
+	CacheControl *CacheControl `json:"cache_control,omitempty"`
 }
 
 func NewTextMessageContent(text string) MessageContent {
