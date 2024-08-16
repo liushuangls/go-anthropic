@@ -38,15 +38,35 @@ type MessagesRequest struct {
 	Messages  []Message `json:"messages"`
 	MaxTokens int       `json:"max_tokens"`
 
-	System        string           `json:"system,omitempty"`
-	Metadata      map[string]any   `json:"metadata,omitempty"`
-	StopSequences []string         `json:"stop_sequences,omitempty"`
-	Stream        bool             `json:"stream,omitempty"`
-	Temperature   *float32         `json:"temperature,omitempty"`
-	TopP          *float32         `json:"top_p,omitempty"`
-	TopK          *int             `json:"top_k,omitempty"`
-	Tools         []ToolDefinition `json:"tools,omitempty"`
-	ToolChoice    *ToolChoice      `json:"tool_choice,omitempty"`
+	System        string              `json:"-"`
+	MultiSystem   []MessageSystemPart `json:"-"`
+	Metadata      map[string]any      `json:"metadata,omitempty"`
+	StopSequences []string            `json:"stop_sequences,omitempty"`
+	Stream        bool                `json:"stream,omitempty"`
+	Temperature   *float32            `json:"temperature,omitempty"`
+	TopP          *float32            `json:"top_p,omitempty"`
+	TopK          *int                `json:"top_k,omitempty"`
+	Tools         []ToolDefinition    `json:"tools,omitempty"`
+	ToolChoice    *ToolChoice         `json:"tool_choice,omitempty"`
+}
+
+func (m MessagesRequest) MarshalJSON() ([]byte, error) {
+	type Alias MessagesRequest
+	aux := struct {
+		System interface{} `json:"system,omitempty"`
+		Alias
+	}{
+		Alias: (Alias)(m),
+	}
+
+	// 根据 MultiSystem 是否为空来设置 system 字段
+	if len(m.MultiSystem) > 0 {
+		aux.System = m.MultiSystem
+	} else if len(m.System) > 0 {
+		aux.System = m.System
+	}
+
+	return json.Marshal(aux)
 }
 
 func (m *MessagesRequest) SetTemperature(t float32) {
@@ -59,6 +79,12 @@ func (m *MessagesRequest) SetTopP(p float32) {
 
 func (m *MessagesRequest) SetTopK(k int) {
 	m.TopK = &k
+}
+
+type MessageSystemPart struct {
+	Type         string               `json:"type"`
+	Text         string               `json:"text"`
+	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
 type Message struct {
