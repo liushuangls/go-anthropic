@@ -13,7 +13,7 @@ Anthropic Claude API wrapper for Go (Unofficial). Support:
 - Streaming Messages
 - Vision
 - Tool use
-- Prompt-Caching
+- Prompt Caching
 
 ## Installation
 
