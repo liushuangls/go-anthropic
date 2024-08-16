@@ -341,7 +341,6 @@ func TestMessagesWithCaching(t *testing.T) {
 	)
 
 	t.Run("caches single message", func(t *testing.T) {
-		text := "Is there a doctor on board?"
 		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			Messages: []anthropic.Message{
@@ -350,7 +349,7 @@ func TestMessagesWithCaching(t *testing.T) {
 					Content: []anthropic.MessageContent{
 						{
 							Type: anthropic.MessagesContentTypeText,
-							Text: &text,
+							Text: toPtr("Is there a doctor on board?"),
 							CacheControl: &anthropic.MessageCacheControl{
 								Type: anthropic.CacheControlTypeEphemeral,
 							},
@@ -368,7 +367,6 @@ func TestMessagesWithCaching(t *testing.T) {
 	})
 
 	t.Run("caches a multi-system message", func(t *testing.T) {
-		text := "Is there a doctor on board?"
 		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
 			MultiSystem: []anthropic.MessageSystemPart{
@@ -390,7 +388,7 @@ func TestMessagesWithCaching(t *testing.T) {
 					Content: []anthropic.MessageContent{
 						{
 							Type: anthropic.MessagesContentTypeText,
-							Text: &text,
+							Text: toPtr("Is there a doctor on board?"),
 						},
 					},
 				},
@@ -404,6 +402,24 @@ func TestMessagesWithCaching(t *testing.T) {
 		t.Logf("CreateMessages resp: %+v", resp)
 	})
 
+}
+
+func TestSetCacheControl(t *testing.T) {
+	mc := anthropic.MessageContent{
+		Type: anthropic.MessagesContentTypeText,
+		Text: toPtr("hello"),
+	}
+
+	t.Run("sets cache control", func(t *testing.T) {
+		mc.SetCacheControl(anthropic.CacheControlTypeEphemeral)
+		if mc.CacheControl == nil {
+			t.Fatal("expected cache control to be set")
+		}
+
+		if mc.CacheControl.Type != anthropic.CacheControlTypeEphemeral {
+			t.Fatalf("expected cache control type to be %s, got %s", anthropic.CacheControlTypeEphemeral, mc.CacheControl.Type)
+		}
+	})
 }
 
 func TestMessagesRequest_MarshalJSON(t *testing.T) {
@@ -556,4 +572,8 @@ func getMessagesRequest(r *http.Request) (req anthropic.MessagesRequest, err err
 		return
 	}
 	return
+}
+
+func toPtr(s string) *string {
+	return &s
 }
