@@ -240,6 +240,66 @@ func main() {
 
 </details>
 
+<details>
+<summary>Prompt Caching</summary>
+
+doc: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/liushuangls/go-anthropic/v2"
+)
+
+func main() {
+	client := anthropic.NewClient(
+		"your anthropic apikey",
+		anthropic.WithBetaVersion(anthropic.BetaPromptCaching20240731),
+	)
+
+	resp, err := client.CreateMessages(
+        context.Background(), 
+        anthropic.MessagesRequest{
+            Model: anthropic.ModelClaude3Haiku20240307, 
+            MultiSystem: []anthropic.MessageSystemPart{
+                {
+                    Type: "text",
+                    Text: "You are an AI assistant tasked with analyzing literary works. Your goal is to provide insightful commentary on themes, characters, and writing style.",
+                },
+                {
+                    Type: "text",
+                    Text: "<the entire contents of Pride and Prejudice>",
+                    CacheControl: &anthropic.MessageCacheControl{
+                        Type: anthropic.CacheControlTypeEphemeral,
+                    },
+                },
+            }, 
+            Messages: []anthropic.Message{
+                anthropic.NewUserTextMessage("Analyze the major themes in Pride and Prejudice.")
+            }, 
+            MaxTokens: 1000,
+	})
+	if err != nil {
+		var e *anthropic.APIError
+		if errors.As(err, &e) {
+			fmt.Printf("Messages error, type: %s, message: %s", e.Type, e.Message)
+		} else {
+			fmt.Printf("Messages error: %v\n", err)
+		}
+		return
+	}
+	fmt.Printf("Usage: %+v\n", resp.Usage)
+	fmt.Println(resp.Content[0].GetText())
+}
+```
+
+</details>
+
 ## Acknowledgments
 The following project had particular influence on go-anthropic is design.
 
