@@ -38,17 +38,21 @@ func TestIsXError(t *testing.T) {
 		})
 	}
 
+	countBool := func(bools []bool) int {
+		count := 0
+		for _, b := range bools {
+			if b {
+				count++
+			}
+		}
+		return count
+	}
+
 	for i, e := range apiErrors {
 		isErrorType := isErrFuncs(e)
 
 		// Expect only one error type to be true for each error
-		numErrorType := 0
-		for _, v := range isErrorType {
-			if v {
-				numErrorType++
-			}
-		}
-
+		numErrorType := countBool(isErrorType)
 		if numErrorType != 1 {
 			t.Errorf("Expected 1 error type to be true, got %d, for error %d", numErrorType, i)
 		}
@@ -57,7 +61,5 @@ func TestIsXError(t *testing.T) {
 		if !isErrorType[i] {
 			t.Errorf("Expected error type %T to be true, got false", e)
 		}
-
 	}
-
 }
