@@ -323,6 +323,105 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 	})
 }
 
+func TestMessagesWithCaching(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithAPIVersion(anthropic.APIVersion20230601),
+		anthropic.WithEmptyMessagesLimit(100),
+		anthropic.WithHTTPClient(http.DefaultClient),
+	)
+
+	t.Run("caches single message", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: anthropic.ModelClaudeInstant1Dot2,
+			Messages: []anthropic.Message{
+				{
+					Role: anthropic.RoleUser,
+					Content: []anthropic.MessageContent{
+						{
+							Type: anthropic.MessagesContentTypeText,
+							Text: toPtr("Is there a doctor on board?"),
+							CacheControl: &anthropic.MessageCacheControl{
+								Type: anthropic.CacheControlTypeEphemeral,
+							},
+						},
+					},
+				},
+			},
+			MaxTokens: 1000,
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+	t.Run("caches a multi-system message", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: anthropic.ModelClaudeInstant1Dot2,
+			MultiSystem: []anthropic.MessageSystemPart{
+				{
+					Type: "text",
+					Text: "You are on a plane. You hear a voice over the intercom: 'Is there a doctor on board?'",
+				},
+				{
+					Type: "text",
+					Text: "<the entire contents of the safety card, the safety demonstration, and your medical training>",
+					CacheControl: &anthropic.MessageCacheControl{
+						Type: anthropic.CacheControlTypeEphemeral,
+					},
+				},
+			},
+			Messages: []anthropic.Message{
+				{
+					Role: anthropic.RoleUser,
+					Content: []anthropic.MessageContent{
+						{
+							Type: anthropic.MessagesContentTypeText,
+							Text: toPtr("Is there a doctor on board?"),
+						},
+					},
+				},
+			},
+			MaxTokens: 1000,
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+}
+
+func TestSetCacheControl(t *testing.T) {
+	mc := anthropic.MessageContent{
+		Type: anthropic.MessagesContentTypeText,
+		Text: toPtr("hello"),
+	}
+
+	t.Run("sets cache control", func(t *testing.T) {
+		mc.SetCacheControl(anthropic.CacheControlTypeEphemeral)
+		if mc.CacheControl == nil {
+			t.Fatal("expected cache control to be set")
+		}
+
+		if mc.CacheControl.Type != anthropic.CacheControlTypeEphemeral {
+			t.Fatalf("expected cache control type to be %s, got %s", anthropic.CacheControlTypeEphemeral, mc.CacheControl.Type)
+		}
+	})
+}
+
 func TestMessagesRequest_MarshalJSON(t *testing.T) {
 	t.Run("marshals MessagesRequest with system", func(t *testing.T) {
 		req := anthropic.MessagesRequest{
@@ -473,4 +572,8 @@ func getMessagesRequest(r *http.Request) (req anthropic.MessagesRequest, err err
 		return
 	}
 	return
+}
+
+func toPtr(s string) *string {
+	return &s
 }
