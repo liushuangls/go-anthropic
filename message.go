@@ -94,6 +94,16 @@ func (m Message) GetFirstContent() MessageContent {
 	return m.Content[0]
 }
 
+type CacheControlType string
+
+const (
+	CacheControlTypeEphemeral CacheControlType = "ephemeral"
+)
+
+type MessageCacheControl struct {
+	Type CacheControlType `json:"type"`
+}
+
 type MessageContent struct {
 	Type MessagesContentType `json:"type"`
 
@@ -106,6 +116,8 @@ type MessageContent struct {
 	*MessageContentToolUse
 
 	PartialJson *string `json:"partial_json,omitempty"`
+
+	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
 func NewTextMessageContent(text string) MessageContent {
@@ -137,6 +149,12 @@ func NewToolUseMessageContent(toolUseID, name string, input json.RawMessage) Mes
 			Name:  name,
 			Input: input,
 		},
+	}
+}
+
+func (m *MessageContent) SetCacheControl() {
+	m.CacheControl = &MessageCacheControl{
+		Type: CacheControlTypeEphemeral,
 	}
 }
 
@@ -238,6 +256,9 @@ func (m MessagesResponse) GetFirstContentText() string {
 type MessagesUsage struct {
 	InputTokens  int `json:"input_tokens"`
 	OutputTokens int `json:"output_tokens"`
+
+	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
+	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`
 }
 
 type ToolDefinition struct {

@@ -14,8 +14,9 @@ const (
 )
 
 const (
-	BetaTools20240404 = "tools-2024-04-04"
-	BetaTools20240516 = "tools-2024-05-16"
+	BetaTools20240404         = "tools-2024-04-04"
+	BetaTools20240516         = "tools-2024-05-16"
+	BetaPromptCaching20240731 = "prompt-caching-2024-07-31"
 
 	BetaMaxTokens35Sonnet20240715 = "max-tokens-3-5-sonnet-2024-07-15"
 )
