@@ -7,7 +7,16 @@ import (
 )
 
 func TestIsXError(t *testing.T) {
-	apiErrors := []anthropic.APIError{}
+	countBool := func(bools []bool) int {
+		count := 0
+		for _, b := range bools {
+			if b {
+				count++
+			}
+		}
+		return count
+	}
+
 	errTypes := []anthropic.ErrType{
 		anthropic.ErrTypeInvalidRequest,
 		anthropic.ErrTypeAuthentication,
@@ -31,21 +40,12 @@ func TestIsXError(t *testing.T) {
 		}
 	}
 
+	apiErrors := []anthropic.APIError{}
 	for _, errType := range errTypes {
 		apiErrors = append(apiErrors, anthropic.APIError{
 			Type:    errType,
 			Message: "fake message",
 		})
-	}
-
-	countBool := func(bools []bool) int {
-		count := 0
-		for _, b := range bools {
-			if b {
-				count++
-			}
-		}
-		return count
 	}
 
 	for i, e := range apiErrors {
