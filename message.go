@@ -287,7 +287,9 @@ type MessagesUsage struct {
 	InputTokens  int `json:"input_tokens"`
 	OutputTokens int `json:"output_tokens"`
 
+	// The number of tokens written to the cache when creating a new entry.
 	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
+	// The number of tokens retrieved from the cache for associated request.
 	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`
 }
 

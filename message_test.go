@@ -321,6 +321,8 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 			t.Fatal("expected error, got nil")
 		}
 	})
+
+	t.Run
 }
 
 func TestMessagesWithCaching(t *testing.T) {
