@@ -323,6 +323,75 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 	})
 }
 
+func TestMessagesRequest_MarshalJSON(t *testing.T) {
+	t.Run("marshals MessagesRequest with system", func(t *testing.T) {
+		req := anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+			System:    "test",
+		}
+
+		bs, err := json.Marshal(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := `{"system":"test","model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
+		if string(bs) != expected {
+			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
+		}
+	})
+
+	t.Run("marshals MessagesRequest with multi system", func(t *testing.T) {
+		req := anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+			MultiSystem: []anthropic.MessageSystemPart{
+				{
+					Type: "text",
+					Text: "test",
+				},
+			},
+		}
+
+		bs, err := json.Marshal(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := `{"system":[{"type":"text","text":"test"}],"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
+		if string(bs) != expected {
+			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
+		}
+	})
+
+	t.Run("marshals MessagesRequest with no system", func(t *testing.T) {
+		req := anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		}
+
+		bs, err := json.Marshal(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := `{"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
+		if string(bs) != expected {
+			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
+		}
+	})
+}
+
 // Allows for injection of custom rate limit headers in the response to test client parsing.
 func handleMessagesEndpoint(headers map[string]string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
