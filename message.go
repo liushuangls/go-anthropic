@@ -152,9 +152,13 @@ func NewToolUseMessageContent(toolUseID, name string, input json.RawMessage) Mes
 	}
 }
 
-func (m *MessageContent) SetCacheControl() {
+func (m *MessageContent) SetCacheControl(ts ...CacheControlType) {
+	t := CacheControlTypeEphemeral
+	if len(ts) > 0 {
+		t = ts[0]
+	}
 	m.CacheControl = &MessageCacheControl{
-		Type: CacheControlTypeEphemeral,
+		Type: t,
 	}
 }
 
