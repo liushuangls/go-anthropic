@@ -23,7 +23,7 @@ const (
 
 // ClientConfig is a configuration of a client.
 type ClientConfig struct {
-	apikey string
+	apiKey string
 
 	BaseURL     string
 	APIVersion  string
@@ -35,9 +35,9 @@ type ClientConfig struct {
 
 type ClientOption func(c *ClientConfig)
 
-func newConfig(apikey string, opts ...ClientOption) ClientConfig {
+func newConfig(apiKey string, opts ...ClientOption) ClientConfig {
 	c := ClientConfig{
-		apikey: apikey,
+		apiKey: apiKey,
 
 		BaseURL:    anthropicAPIURLv1,
 		APIVersion: APIVersion20230601,
