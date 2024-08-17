@@ -103,6 +103,67 @@ func TestMessagesStreamError(t *testing.T) {
 	t.Logf("CreateMessagesStream error: %s", err)
 }
 
+func TestCreateMessagesStream(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+	baseUrl := ts.URL + "/v1"
+
+	t.Run("Accepts generic beta version", func(t *testing.T) {
+		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithBetaVersion("beta-version"))
+		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+			MessagesRequest: anthropic.MessagesRequest{
+				Model: anthropic.ModelClaudeInstant1Dot2,
+				Messages: []anthropic.Message{
+					anthropic.NewUserTextMessage("What is your name?"),
+				},
+				MaxTokens: 1000,
+			},
+		})
+		if err != nil {
+			t.Fatalf("CreateMessagesStream error: %s", err)
+		}
+	})
+
+	t.Run("Does not error for empty messages below limit", func(t *testing.T) {
+		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(100))
+		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+			MessagesRequest: anthropic.MessagesRequest{
+				Model:     anthropic.ModelClaudeInstant1Dot2,
+				Messages:  []anthropic.Message{},
+				MaxTokens: 1000,
+			},
+		})
+		if err != nil {
+			t.Fatalf("CreateMessagesStream error: %s", err)
+		}
+	})
+
+	// TODO: find a way to return multiple empty messages to probe 'too many empty messages' error
+	// t.Run("Error for empty messages above limit", func(t *testing.T) {
+	// 	client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(0))
+	// 	_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+	// 		MessagesRequest: anthropic.MessagesRequest{
+	// 			Model: anthropic.ModelClaudeInstant1Dot2,
+	// 			Messages: []anthropic.Message{
+	// 				anthropic.NewUserTextMessage("What's the weather like?"),
+	// 			},
+	// 			MaxTokens: 1000,
+	// 		},
+	// 	})
+	// 	if err == nil {
+	// 		t.Fatalf("Expected error for empty messages above limit, got nil")
+	// 	}
+
+	// 	if !errors.Is(err, anthropic.ErrTooManyEmptyStreamMessages) {
+	// 		t.Fatalf("Expected error to be ErrTooManyEmptyStreamMessages, got: %v", err)
+	// 	}
+	// })
+}
+
 func TestMessagesStreamToolUse(t *testing.T) {
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
