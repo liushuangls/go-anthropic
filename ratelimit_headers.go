@@ -21,11 +21,6 @@ type RateLimitHeaders struct {
 	TokensReset time.Time `json:"anthropic-ratelimit-tokens-reset"`
 	// The number of seconds until the rate limit window resets.
 	RetryAfter int `json:"retry-after"`
-
-	// The number of tokens written to the cache when creating a new entry.
-	CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
-	// The number of tokens retrieved from the cache for associated request.
-	CacheReadInputTokens int `json:"cache_read_input_tokens"`
 }
 
 func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {

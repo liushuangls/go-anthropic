@@ -231,29 +231,8 @@ func TestMessagesToolUse(t *testing.T) {
 }
 
 func TestMessagesRateLimitHeaders(t *testing.T) {
-
 	t.Run("parses valid rate limit headers", func(t *testing.T) {
-
-		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
-
-		ts := server.AnthropicTestServer()
-		ts.Start()
-		defer ts.Close()
-
-		baseUrl := ts.URL + "/v1"
-		client := anthropic.NewClient(
-			test.GetTestToken(),
-			anthropic.WithBaseURL(baseUrl),
-		)
-
-		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaude3Haiku20240307,
-			Messages: []anthropic.Message{
-				anthropic.NewUserTextMessage("What is your name?"),
-			},
-			MaxTokens: 1000,
-		})
+		resp, err := getRespWithHeaders(rateLimitHeaders)
 		if err != nil {
 			t.Fatalf("CreateMessages error: %v", err)
 		}
@@ -289,29 +268,8 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 	})
 
 	t.Run("returns error for missing rate limit headers", func(t *testing.T) {
-
 		invalidHeaders := map[string]string{}
-
-		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handleMessagesEndpoint(invalidHeaders))
-
-		ts := server.AnthropicTestServer()
-		ts.Start()
-		defer ts.Close()
-
-		baseUrl := ts.URL + "/v1"
-		client := anthropic.NewClient(
-			test.GetTestToken(),
-			anthropic.WithBaseURL(baseUrl),
-		)
-
-		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaude3Haiku20240307,
-			Messages: []anthropic.Message{
-				anthropic.NewUserTextMessage("What is your name?"),
-			},
-			MaxTokens: 1000,
-		})
+		resp, err := getRespWithHeaders(invalidHeaders)
 		if err != nil {
 			t.Fatalf("CreateMessages error: %v", err)
 		}
@@ -321,8 +279,6 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 			t.Fatal("expected error, got nil")
 		}
 	})
-
-	t.Run
 }
 
 func TestMessagesWithCaching(t *testing.T) {
@@ -490,6 +446,53 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 		if string(bs) != expected {
 			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
 		}
+	})
+}
+
+func TestUsageHeaders(t *testing.T) {
+	resp, err := getRespWithHeaders(rateLimitHeaders)
+	if err != nil {
+		t.Fatalf("CreateMessages error: %v", err)
+	}
+
+	usage := resp.Usage
+	if usage.InputTokens != 10 {
+		t.Fatalf("InputTokens mismatch. got %d, want 10", usage.InputTokens)
+	}
+
+	if usage.OutputTokens != 10 {
+		t.Fatalf("OutputTokens mismatch. got %d, want 10", usage.OutputTokens)
+	}
+
+	if usage.CacheCreationInputTokens != 0 {
+		t.Fatalf("CacheCreationInputTokens mismatch. got %d, want 0", usage.CacheCreationInputTokens)
+	}
+
+	if usage.CacheReadInputTokens != 0 {
+		t.Fatalf("CacheReadInputTokens mismatch. got %d, want 0", usage.CacheReadInputTokens)
+	}
+}
+
+func getRespWithHeaders(headers map[string]string) (anthropic.MessagesResponse, error) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(headers))
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	return client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+		Model: anthropic.ModelClaude3Haiku20240307,
+		Messages: []anthropic.Message{
+			anthropic.NewUserTextMessage("What is your name?"),
+		},
+		MaxTokens: 1000,
 	})
 }
 
