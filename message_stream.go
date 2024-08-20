@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -238,7 +237,6 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 			}
 		}
 		emptyMessageCount++
-		fmt.Println("emptyMessageCount", emptyMessageCount)
 		if emptyMessageCount > c.config.EmptyMessagesLimit {
 			return response, ErrTooManyEmptyStreamMessages
 		}
