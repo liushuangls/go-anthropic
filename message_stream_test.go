@@ -132,14 +132,20 @@ func TestCreateMessagesStream(t *testing.T) {
 	t.Run("Does not error for empty messages below limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit-1, "data"))
+		server.RegisterHandler("/v1/messages",
+			handlerMessagesStreamEmptyMessages(emptyMessagesLimit-1, "data: {}"),
+		)
 
 		ts := server.AnthropicTestServer()
 		ts.Start()
 		defer ts.Close()
 		baseUrl := ts.URL + "/v1"
 
-		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit)))
+		client := anthropic.NewClient(
+			test.GetTestToken(),
+			anthropic.WithBaseURL(baseUrl),
+			anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit)),
+		)
 		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 			MessagesRequest: anthropic.MessagesRequest{
 				Model:     anthropic.ModelClaudeInstant1Dot2,
@@ -155,14 +161,18 @@ func TestCreateMessagesStream(t *testing.T) {
 	t.Run("Error for empty data messages above limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "data"))
+		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "data: {}"))
 
 		ts := server.AnthropicTestServer()
 		ts.Start()
 		defer ts.Close()
 		baseUrl := ts.URL + "/v1"
 
-		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit-1)))
+		client := anthropic.NewClient(
+			test.GetTestToken(),
+			anthropic.WithBaseURL(baseUrl),
+			anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit-1)),
+		)
 		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 			MessagesRequest: anthropic.MessagesRequest{
 				Model: anthropic.ModelClaudeInstant1Dot2,
@@ -184,14 +194,18 @@ func TestCreateMessagesStream(t *testing.T) {
 	t.Run("Error for empty unknown messages above limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "fake"))
+		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "fake: {}"))
 
 		ts := server.AnthropicTestServer()
 		ts.Start()
 		defer ts.Close()
 		baseUrl := ts.URL + "/v1"
 
-		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit-1)))
+		client := anthropic.NewClient(
+			test.GetTestToken(),
+			anthropic.WithBaseURL(baseUrl),
+			anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit-1)),
+		)
 		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 			MessagesRequest: anthropic.MessagesRequest{
 				Model: anthropic.ModelClaudeInstant1Dot2,
@@ -260,7 +274,10 @@ func TestMessagesStreamToolUse(t *testing.T) {
 			case anthropic.MessagesContentTypeText:
 				t.Logf("content block stop, text: %s", content.GetText())
 			case anthropic.MessagesContentTypeToolUse:
-				t.Logf("content blog stop, tool_use: %+v, input: %s", *content.MessageContentToolUse, content.MessageContentToolUse.Input)
+				t.Logf("content blog stop, tool_use: %+v, input: %s",
+					*content.MessageContentToolUse,
+					content.MessageContentToolUse.Input,
+				)
 			}
 		},
 	}
@@ -409,7 +426,7 @@ func handlerMessagesStreamToolUse(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(dataBytes)
 }
 
-func handlerMessagesStreamEmptyMessages(numEmptyMessages int, pre string) test.Handler {
+func handlerMessagesStreamEmptyMessages(numEmptyMessages int, payload string) test.Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, err := getMessagesRequest(r)
 		if err != nil {
@@ -425,7 +442,7 @@ func handlerMessagesStreamEmptyMessages(numEmptyMessages int, pre string) test.H
 		dataBytes = append(dataBytes, []byte(`data: {"type":"message_start","message":{"id":"123333","type":"message","role":"assistant","model":"claude-3-opus-20240229","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":844,"output_tokens":2}}}`+"\n\n")...)
 
 		for i := 0; i < numEmptyMessages; i++ {
-			dataBytes = append(dataBytes, []byte(pre+": {}\n")...)
+			dataBytes = append(dataBytes, []byte(payload+"\n")...)
 		}
 
 		_, _ = w.Write(dataBytes)
