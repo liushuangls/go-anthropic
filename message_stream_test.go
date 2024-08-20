@@ -2,6 +2,7 @@ package anthropic_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -104,15 +105,15 @@ func TestMessagesStreamError(t *testing.T) {
 }
 
 func TestCreateMessagesStream(t *testing.T) {
-	server := test.NewTestServer()
-	server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
-
-	ts := server.AnthropicTestServer()
-	ts.Start()
-	defer ts.Close()
-	baseUrl := ts.URL + "/v1"
-
 	t.Run("Accepts generic beta version", func(t *testing.T) {
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
+
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
+		baseUrl := ts.URL + "/v1"
+
 		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithBetaVersion("beta-version"))
 		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 			MessagesRequest: anthropic.MessagesRequest{
@@ -129,7 +130,16 @@ func TestCreateMessagesStream(t *testing.T) {
 	})
 
 	t.Run("Does not error for empty messages below limit", func(t *testing.T) {
-		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(100))
+		emptyMessagesLimit := 100
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit-1, "data"))
+
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
+		baseUrl := ts.URL + "/v1"
+
+		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit)))
 		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 			MessagesRequest: anthropic.MessagesRequest{
 				Model:     anthropic.ModelClaudeInstant1Dot2,
@@ -142,26 +152,63 @@ func TestCreateMessagesStream(t *testing.T) {
 		}
 	})
 
-	// TODO: find a way to return multiple empty messages to probe 'too many empty messages' error
-	// t.Run("Error for empty messages above limit", func(t *testing.T) {
-	// 	client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(0))
-	// 	_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
-	// 		MessagesRequest: anthropic.MessagesRequest{
-	// 			Model: anthropic.ModelClaudeInstant1Dot2,
-	// 			Messages: []anthropic.Message{
-	// 				anthropic.NewUserTextMessage("What's the weather like?"),
-	// 			},
-	// 			MaxTokens: 1000,
-	// 		},
-	// 	})
-	// 	if err == nil {
-	// 		t.Fatalf("Expected error for empty messages above limit, got nil")
-	// 	}
+	t.Run("Error for empty data messages above limit", func(t *testing.T) {
+		emptyMessagesLimit := 100
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "data"))
 
-	// 	if !errors.Is(err, anthropic.ErrTooManyEmptyStreamMessages) {
-	// 		t.Fatalf("Expected error to be ErrTooManyEmptyStreamMessages, got: %v", err)
-	// 	}
-	// })
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
+		baseUrl := ts.URL + "/v1"
+
+		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit-1)))
+		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+			MessagesRequest: anthropic.MessagesRequest{
+				Model: anthropic.ModelClaudeInstant1Dot2,
+				Messages: []anthropic.Message{
+					anthropic.NewUserTextMessage("What's the weather like?"),
+				},
+				MaxTokens: 1000,
+			},
+		})
+		if err == nil {
+			t.Fatalf("Expected error for empty messages above limit, got nil")
+		}
+
+		if !errors.Is(err, anthropic.ErrTooManyEmptyStreamMessages) {
+			t.Fatalf("Expected error to be ErrTooManyEmptyStreamMessages, got: %v", err)
+		}
+	})
+
+	t.Run("Error for empty unknown messages above limit", func(t *testing.T) {
+		emptyMessagesLimit := 100
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "fake"))
+
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
+		baseUrl := ts.URL + "/v1"
+
+		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit-1)))
+		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+			MessagesRequest: anthropic.MessagesRequest{
+				Model: anthropic.ModelClaudeInstant1Dot2,
+				Messages: []anthropic.Message{
+					anthropic.NewUserTextMessage("What's the weather like?"),
+				},
+				MaxTokens: 1000,
+			},
+		})
+		if err == nil {
+			t.Fatalf("Expected error for empty messages above limit, got nil")
+		}
+
+		if !errors.Is(err, anthropic.ErrTooManyEmptyStreamMessages) {
+			t.Fatalf("Expected error to be ErrTooManyEmptyStreamMessages, got: %v", err)
+		}
+	})
 }
 
 func TestMessagesStreamToolUse(t *testing.T) {
@@ -360,4 +407,27 @@ func handlerMessagesStreamToolUse(w http.ResponseWriter, r *http.Request) {
 	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`+"\n\n")...)
 
 	_, _ = w.Write(dataBytes)
+}
+
+func handlerMessagesStreamEmptyMessages(numEmptyMessages int, pre string) test.Handler {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, err := getMessagesRequest(r)
+		if err != nil {
+			http.Error(w, "request error", http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/event-stream")
+
+		var dataBytes []byte
+
+		dataBytes = append(dataBytes, []byte("event: message_start\n")...)
+		dataBytes = append(dataBytes, []byte(`data: {"type":"message_start","message":{"id":"123333","type":"message","role":"assistant","model":"claude-3-opus-20240229","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":844,"output_tokens":2}}}`+"\n\n")...)
+
+		for i := 0; i < numEmptyMessages; i++ {
+			dataBytes = append(dataBytes, []byte(pre+": {}\n")...)
+		}
+
+		_, _ = w.Write(dataBytes)
+	}
 }

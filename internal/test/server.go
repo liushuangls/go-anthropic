@@ -13,16 +13,16 @@ func GetTestToken() string {
 }
 
 type ServerTest struct {
-	handlers map[string]handler
+	handlers map[string]Handler
 }
 
-type handler func(w http.ResponseWriter, r *http.Request)
+type Handler func(w http.ResponseWriter, r *http.Request)
 
 func NewTestServer() *ServerTest {
-	return &ServerTest{handlers: make(map[string]handler)}
+	return &ServerTest{handlers: make(map[string]Handler)}
 }
 
-func (ts *ServerTest) RegisterHandler(path string, handler handler) {
+func (ts *ServerTest) RegisterHandler(path string, handler Handler) {
 	ts.handlers[path] = handler
 }
 
