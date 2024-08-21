@@ -135,13 +135,6 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 				data      = bytes.TrimPrefix(noSpaceLine, dataPrefix)
 				eventType = MessagesEvent(event)
 			)
-			if isEmptyJSON(data) || len(data) == 0 {
-				emptyMessageCount++
-				if emptyMessageCount > c.config.EmptyMessagesLimit {
-					return response, ErrTooManyEmptyStreamMessages
-				}
-			}
-
 			switch eventType {
 			case MessagesEventError:
 				var eventData ErrorResponse
@@ -242,9 +235,4 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 		}
 	}
 	return
-}
-
-func isEmptyJSON(data []byte) bool {
-	trimmedData := bytes.TrimSpace(data)
-	return bytes.Equal(trimmedData, []byte("{}"))
 }

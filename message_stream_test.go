@@ -129,11 +129,11 @@ func TestCreateMessagesStream(t *testing.T) {
 		}
 	})
 
-	t.Run("Does not error for empty messages below limit", func(t *testing.T) {
+	t.Run("Does not error for empty unknown messages below limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
 		server.RegisterHandler("/v1/messages",
-			handlerMessagesStreamEmptyMessages(emptyMessagesLimit-1, "data: {}"),
+			handlerMessagesStreamEmptyMessages(emptyMessagesLimit-1, "fake: {}"),
 		)
 
 		ts := server.AnthropicTestServer()
@@ -155,39 +155,6 @@ func TestCreateMessagesStream(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatalf("CreateMessagesStream error: %s", err)
-		}
-	})
-
-	t.Run("Error for empty data messages above limit", func(t *testing.T) {
-		emptyMessagesLimit := 100
-		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "data: {}"))
-
-		ts := server.AnthropicTestServer()
-		ts.Start()
-		defer ts.Close()
-		baseUrl := ts.URL + "/v1"
-
-		client := anthropic.NewClient(
-			test.GetTestToken(),
-			anthropic.WithBaseURL(baseUrl),
-			anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit-1)),
-		)
-		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
-			MessagesRequest: anthropic.MessagesRequest{
-				Model: anthropic.ModelClaudeInstant1Dot2,
-				Messages: []anthropic.Message{
-					anthropic.NewUserTextMessage("What's the weather like?"),
-				},
-				MaxTokens: 1000,
-			},
-		})
-		if err == nil {
-			t.Fatalf("Expected error for empty messages above limit, got nil")
-		}
-
-		if !errors.Is(err, anthropic.ErrTooManyEmptyStreamMessages) {
-			t.Fatalf("Expected error to be ErrTooManyEmptyStreamMessages, got: %v", err)
 		}
 	})
 
