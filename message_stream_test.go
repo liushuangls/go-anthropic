@@ -2,6 +2,7 @@ package anthropic_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -103,6 +104,94 @@ func TestMessagesStreamError(t *testing.T) {
 	t.Logf("CreateMessagesStream error: %s", err)
 }
 
+func TestCreateMessagesStream(t *testing.T) {
+	t.Run("Accepts generic beta version", func(t *testing.T) {
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
+
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
+		baseUrl := ts.URL + "/v1"
+
+		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithBetaVersion("beta-version"))
+		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+			MessagesRequest: anthropic.MessagesRequest{
+				Model: anthropic.ModelClaudeInstant1Dot2,
+				Messages: []anthropic.Message{
+					anthropic.NewUserTextMessage("What is your name?"),
+				},
+				MaxTokens: 1000,
+			},
+		})
+		if err != nil {
+			t.Fatalf("CreateMessagesStream error: %s", err)
+		}
+	})
+
+	t.Run("Does not error for empty unknown messages below limit", func(t *testing.T) {
+		emptyMessagesLimit := 100
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages",
+			handlerMessagesStreamEmptyMessages(emptyMessagesLimit-1, "fake: {}"),
+		)
+
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
+		baseUrl := ts.URL + "/v1"
+
+		client := anthropic.NewClient(
+			test.GetTestToken(),
+			anthropic.WithBaseURL(baseUrl),
+			anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit)),
+		)
+		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+			MessagesRequest: anthropic.MessagesRequest{
+				Model:     anthropic.ModelClaudeInstant1Dot2,
+				Messages:  []anthropic.Message{},
+				MaxTokens: 1000,
+			},
+		})
+		if err != nil {
+			t.Fatalf("CreateMessagesStream error: %s", err)
+		}
+	})
+
+	t.Run("Error for empty unknown messages above limit", func(t *testing.T) {
+		emptyMessagesLimit := 100
+		server := test.NewTestServer()
+		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "fake: {}"))
+
+		ts := server.AnthropicTestServer()
+		ts.Start()
+		defer ts.Close()
+		baseUrl := ts.URL + "/v1"
+
+		client := anthropic.NewClient(
+			test.GetTestToken(),
+			anthropic.WithBaseURL(baseUrl),
+			anthropic.WithEmptyMessagesLimit(uint(emptyMessagesLimit-1)),
+		)
+		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+			MessagesRequest: anthropic.MessagesRequest{
+				Model: anthropic.ModelClaudeInstant1Dot2,
+				Messages: []anthropic.Message{
+					anthropic.NewUserTextMessage("What's the weather like?"),
+				},
+				MaxTokens: 1000,
+			},
+		})
+		if err == nil {
+			t.Fatalf("Expected error for empty messages above limit, got nil")
+		}
+
+		if !errors.Is(err, anthropic.ErrTooManyEmptyStreamMessages) {
+			t.Fatalf("Expected error to be ErrTooManyEmptyStreamMessages, got: %v", err)
+		}
+	})
+}
+
 func TestMessagesStreamToolUse(t *testing.T) {
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
@@ -152,7 +241,10 @@ func TestMessagesStreamToolUse(t *testing.T) {
 			case anthropic.MessagesContentTypeText:
 				t.Logf("content block stop, text: %s", content.GetText())
 			case anthropic.MessagesContentTypeToolUse:
-				t.Logf("content blog stop, tool_use: %+v, input: %s", *content.MessageContentToolUse, content.MessageContentToolUse.Input)
+				t.Logf("content blog stop, tool_use: %+v, input: %s",
+					*content.MessageContentToolUse,
+					content.MessageContentToolUse.Input,
+				)
 			}
 		},
 	}
@@ -299,4 +391,27 @@ func handlerMessagesStreamToolUse(w http.ResponseWriter, r *http.Request) {
 	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`+"\n\n")...)
 
 	_, _ = w.Write(dataBytes)
+}
+
+func handlerMessagesStreamEmptyMessages(numEmptyMessages int, payload string) test.Handler {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, err := getMessagesRequest(r)
+		if err != nil {
+			http.Error(w, "request error", http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/event-stream")
+
+		var dataBytes []byte
+
+		dataBytes = append(dataBytes, []byte("event: message_start\n")...)
+		dataBytes = append(dataBytes, []byte(`data: {"type":"message_start","message":{"id":"123333","type":"message","role":"assistant","model":"claude-3-opus-20240229","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":844,"output_tokens":2}}}`+"\n\n")...)
+
+		for i := 0; i < numEmptyMessages; i++ {
+			dataBytes = append(dataBytes, []byte(payload+"\n")...)
+		}
+
+		_, _ = w.Write(dataBytes)
+	}
 }

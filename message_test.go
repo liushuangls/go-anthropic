@@ -61,6 +61,135 @@ func TestMessages(t *testing.T) {
 	t.Logf("CreateMessages resp: %+v", resp)
 }
 
+func TestNewUserTextMessage(t *testing.T) {
+	m := anthropic.NewUserTextMessage("What is your name?")
+	if m.Role != anthropic.RoleUser {
+		t.Fatalf("Role mismatch. got %s, want %s", m.Role, anthropic.RoleUser)
+	}
+
+	if m.Content[0].Type != anthropic.MessagesContentTypeText {
+		t.Fatalf("Content type mismatch. got %s, want %s", m.Content[0].Type, anthropic.MessagesContentTypeText)
+	}
+
+	if *m.Content[0].Text != "What is your name?" {
+		t.Fatalf("Content text mismatch. got %s, want %s", *m.Content[0].Text, "What is your name?")
+	}
+}
+
+func TestNewAssistantTextMessage(t *testing.T) {
+	m := anthropic.NewAssistantTextMessage("My name is Claude.")
+	if m.Role != anthropic.RoleAssistant {
+		t.Fatalf("Role mismatch. got %s, want %s", m.Role, anthropic.RoleAssistant)
+	}
+
+	if m.Content[0].Type != anthropic.MessagesContentTypeText {
+		t.Fatalf("Content type mismatch. got %s, want %s", m.Content[0].Type, anthropic.MessagesContentTypeText)
+	}
+
+	if *m.Content[0].Text != "My name is Claude." {
+		t.Fatalf("Content text mismatch. got %s, want %s", *m.Content[0].Text, "My name is Claude.")
+	}
+}
+
+func TestGetFirstContent(t *testing.T) {
+	t.Run("returns empty content", func(t *testing.T) {
+		m := anthropic.Message{}
+		c := m.GetFirstContent()
+		if c.Type != "" {
+			t.Fatalf("Content type mismatch. got %s, want %s", c.Type, "")
+		}
+		if c.Text != nil {
+			t.Fatalf("Content text mismatch. got %s, want %s", *c.Text, "")
+		}
+	})
+
+	t.Run("returns single content", func(t *testing.T) {
+		m := anthropic.NewAssistantTextMessage("My name is Claude.")
+		c := m.GetFirstContent()
+		if c.Type != anthropic.MessagesContentTypeText {
+			t.Fatalf("Content type mismatch. got %s, want %s", c.Type, anthropic.MessagesContentTypeText)
+		}
+
+		if *c.Text != "My name is Claude." {
+			t.Fatalf("Content text mismatch. got %s, want %s", *c.Text, "My name is Claude.")
+		}
+	})
+
+	t.Run("returns first content when multiple content present", func(t *testing.T) {
+		m := anthropic.Message{
+			Role: anthropic.RoleAssistant,
+			Content: []anthropic.MessageContent{
+				anthropic.NewTextMessageContent("My name is Claude."),
+				anthropic.NewTextMessageContent("What is your name?"),
+			},
+		}
+		c := m.GetFirstContent()
+		if c.Type != anthropic.MessagesContentTypeText {
+			t.Fatalf("Content type mismatch. got %s, want %s", c.Type, anthropic.MessagesContentTypeText)
+		}
+
+		if *c.Text != "My name is Claude." {
+			t.Fatalf("Content text mismatch. got %s, want %s", *c.Text, "My name is Claude.")
+		}
+	})
+}
+
+func TestGetFirstContentText(t *testing.T) {
+	t.Run("returns empty text", func(t *testing.T) {
+		m := anthropic.MessagesResponse{}
+		if m.GetFirstContentText() != "" {
+			t.Fatalf("Content text mismatch. got %s, want %s", m.GetFirstContentText(), "")
+		}
+	})
+
+	t.Run("returns text", func(t *testing.T) {
+		m := anthropic.MessagesResponse{
+			Content: []anthropic.MessageContent{
+				anthropic.NewTextMessageContent("test string"),
+			},
+		}
+		if m.GetFirstContentText() != "test string" {
+			t.Fatalf("Content text mismatch. got %s, want %s", m.GetFirstContentText(), "")
+		}
+	})
+}
+
+func TestGetText(t *testing.T) {
+	t.Run("returns empty text", func(t *testing.T) {
+		c := anthropic.MessageContent{}
+		if c.GetText() != "" {
+			t.Fatalf("Content text mismatch. got %s, want %s", c.GetText(), "")
+		}
+	})
+
+	t.Run("returns text", func(t *testing.T) {
+		c := anthropic.NewTextMessageContent("My name is Claude.")
+		if c.GetText() != "My name is Claude." {
+			t.Fatalf("Content text mismatch. got %s, want %s", c.GetText(), "My name is Claude.")
+		}
+	})
+}
+
+func TestConcatText(t *testing.T) {
+	t.Run("concatenates text when text content text present", func(t *testing.T) {
+		mc := anthropic.NewTextMessageContent("original")
+		mc.ConcatText(" added")
+
+		if mc.GetText() != "original added" {
+			t.Fatalf("Content text mismatch. got %s, want %s", mc.GetText(), "original added")
+		}
+	})
+
+	t.Run("concatenates text when text content text not present", func(t *testing.T) {
+		mc := anthropic.MessageContent{}
+		mc.ConcatText("added")
+
+		if mc.GetText() != "added" {
+			t.Fatalf("Content text mismatch. got %s, want %s", mc.GetText(), "added")
+		}
+	})
+}
+
 func TestMessagesTokenError(t *testing.T) {
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
@@ -231,29 +360,8 @@ func TestMessagesToolUse(t *testing.T) {
 }
 
 func TestMessagesRateLimitHeaders(t *testing.T) {
-
 	t.Run("parses valid rate limit headers", func(t *testing.T) {
-
-		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
-
-		ts := server.AnthropicTestServer()
-		ts.Start()
-		defer ts.Close()
-
-		baseUrl := ts.URL + "/v1"
-		client := anthropic.NewClient(
-			test.GetTestToken(),
-			anthropic.WithBaseURL(baseUrl),
-		)
-
-		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaude3Haiku20240307,
-			Messages: []anthropic.Message{
-				anthropic.NewUserTextMessage("What is your name?"),
-			},
-			MaxTokens: 1000,
-		})
+		resp, err := getRespWithHeaders(rateLimitHeaders)
 		if err != nil {
 			t.Fatalf("CreateMessages error: %v", err)
 		}
@@ -289,29 +397,8 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 	})
 
 	t.Run("returns error for missing rate limit headers", func(t *testing.T) {
-
 		invalidHeaders := map[string]string{}
-
-		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handleMessagesEndpoint(invalidHeaders))
-
-		ts := server.AnthropicTestServer()
-		ts.Start()
-		defer ts.Close()
-
-		baseUrl := ts.URL + "/v1"
-		client := anthropic.NewClient(
-			test.GetTestToken(),
-			anthropic.WithBaseURL(baseUrl),
-		)
-
-		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaude3Haiku20240307,
-			Messages: []anthropic.Message{
-				anthropic.NewUserTextMessage("What is your name?"),
-			},
-			MaxTokens: 1000,
-		})
+		resp, err := getRespWithHeaders(invalidHeaders)
 		if err != nil {
 			t.Fatalf("CreateMessages error: %v", err)
 		}
@@ -488,6 +575,53 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 		if string(bs) != expected {
 			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
 		}
+	})
+}
+
+func TestUsageHeaders(t *testing.T) {
+	resp, err := getRespWithHeaders(rateLimitHeaders)
+	if err != nil {
+		t.Fatalf("CreateMessages error: %v", err)
+	}
+
+	usage := resp.Usage
+	if usage.InputTokens != 10 {
+		t.Fatalf("InputTokens mismatch. got %d, want 10", usage.InputTokens)
+	}
+
+	if usage.OutputTokens != 10 {
+		t.Fatalf("OutputTokens mismatch. got %d, want 10", usage.OutputTokens)
+	}
+
+	if usage.CacheCreationInputTokens != 0 {
+		t.Fatalf("CacheCreationInputTokens mismatch. got %d, want 0", usage.CacheCreationInputTokens)
+	}
+
+	if usage.CacheReadInputTokens != 0 {
+		t.Fatalf("CacheReadInputTokens mismatch. got %d, want 0", usage.CacheReadInputTokens)
+	}
+}
+
+func getRespWithHeaders(headers map[string]string) (anthropic.MessagesResponse, error) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(headers))
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	return client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+		Model: anthropic.ModelClaude3Haiku20240307,
+		Messages: []anthropic.Message{
+			anthropic.NewUserTextMessage("What is your name?"),
+		},
+		MaxTokens: 1000,
 	})
 }
 

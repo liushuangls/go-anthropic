@@ -31,9 +31,9 @@ func (h *httpHeader) GetRateLimitHeaders() (RateLimitHeaders, error) {
 }
 
 // NewClient create new Anthropic API client
-func NewClient(apikey string, opts ...ClientOption) *Client {
+func NewClient(apiKey string, opts ...ClientOption) *Client {
 	return &Client{
-		config: newConfig(apikey, opts...),
+		config: newConfig(apiKey, opts...),
 	}
 }
 
@@ -101,7 +101,7 @@ func (c *Client) newRequest(ctx context.Context, method, urlSuffix string, body 
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Accept", "application/json; charset=utf-8")
-	req.Header.Set("X-Api-Key", c.config.apikey)
+	req.Header.Set("X-Api-Key", c.config.apiKey)
 	req.Header.Set("Anthropic-Version", c.config.APIVersion)
 
 	for _, setter := range requestSetters {
