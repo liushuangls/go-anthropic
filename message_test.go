@@ -47,18 +47,79 @@ func TestMessages(t *testing.T) {
 		anthropic.WithEmptyMessagesLimit(100),
 		anthropic.WithHTTPClient(http.DefaultClient),
 	)
-	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-		Model: anthropic.ModelClaudeInstant1Dot2,
-		Messages: []anthropic.Message{
-			anthropic.NewUserTextMessage("What is your name?"),
-		},
-		MaxTokens: 1000,
-	})
-	if err != nil {
-		t.Fatalf("CreateMessages error: %v", err)
-	}
 
-	t.Logf("CreateMessages resp: %+v", resp)
+	t.Run("create messages success", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: anthropic.ModelClaudeInstant1Dot2,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+	t.Run("create messages success with single system message", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: anthropic.ModelClaudeInstant1Dot2,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+			System:    "test system message",
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+	t.Run("create messages success with single multi-system message", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: anthropic.ModelClaudeInstant1Dot2,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens:   1000,
+			MultiSystem: anthropic.NewMultiSystemMessages("test single multi-system message"),
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+	t.Run("create messages success with multi-system messages", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: anthropic.ModelClaudeInstant1Dot2,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+			MultiSystem: anthropic.NewMultiSystemMessages(
+				"test multi-system messages",
+				"here",
+				"are",
+				"some",
+				"more",
+				"messages",
+				"for",
+				"testing",
+			),
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
 }
 
 func TestNewUserTextMessage(t *testing.T) {
