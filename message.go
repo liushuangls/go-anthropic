@@ -88,11 +88,11 @@ type MessageSystemPart struct {
 }
 
 func NewMultiSystemMessages(texts ...string) []MessageSystemPart {
-	var result []MessageSystemPart
+	var systemParts []MessageSystemPart
 	for _, text := range texts {
-		result = append(result, NewSystemMessagePart(text))
+		systemParts = append(systemParts, NewSystemMessagePart(text))
 	}
-	return result
+	return systemParts
 }
 
 func NewSystemMessagePart(text string) MessageSystemPart {
@@ -184,12 +184,8 @@ func NewToolResultMessageContent(toolUseID, content string, isError bool) Messag
 
 func NewToolUseMessageContent(toolUseID, name string, input json.RawMessage) MessageContent {
 	return MessageContent{
-		Type: MessagesContentTypeToolUse,
-		MessageContentToolUse: &MessageContentToolUse{
-			ID:    toolUseID,
-			Name:  name,
-			Input: input,
-		},
+		Type:                  MessagesContentTypeToolUse,
+		MessageContentToolUse: NewMessageContentToolUse(toolUseID, name, input),
 	}
 }
 
@@ -267,10 +263,26 @@ type MessageContentImageSource struct {
 	Data      any    `json:"data"`
 }
 
+func NewMessageContentImageSource(imageSourceType, mediaType string, data any) MessageContentImageSource {
+	return MessageContentImageSource{
+		Type:      imageSourceType,
+		MediaType: mediaType,
+		Data:      data,
+	}
+}
+
 type MessageContentToolUse struct {
 	ID    string          `json:"id,omitempty"`
 	Name  string          `json:"name,omitempty"`
 	Input json.RawMessage `json:"input,omitempty"`
+}
+
+func NewMessageContentToolUse(toolUseId, name string, input json.RawMessage) *MessageContentToolUse {
+	return &MessageContentToolUse{
+		ID:    toolUseId,
+		Name:  name,
+		Input: input,
+	}
 }
 
 func (c *MessageContentToolUse) UnmarshalInput(v any) error {
