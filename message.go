@@ -34,7 +34,7 @@ const (
 )
 
 type MessagesRequest struct {
-	Model     string    `json:"model"`
+	Model     Model     `json:"model"`
 	Messages  []Message `json:"messages"`
 	MaxTokens int       `json:"max_tokens"`
 
@@ -88,7 +88,7 @@ type MessageSystemPart struct {
 }
 
 type Message struct {
-	Role    string           `json:"role"`
+	Role    ChatRole         `json:"role"`
 	Content []MessageContent `json:"content"`
 }
 
@@ -267,9 +267,9 @@ type MessagesResponse struct {
 
 	ID           string               `json:"id"`
 	Type         MessagesResponseType `json:"type"`
-	Role         string               `json:"role"`
+	Role         ChatRole             `json:"role"`
 	Content      []MessageContent     `json:"content"`
-	Model        string               `json:"model"`
+	Model        Model                `json:"model"`
 	StopReason   MessagesStopReason   `json:"stop_reason"`
 	StopSequence string               `json:"stop_sequence"`
 	Usage        MessagesUsage        `json:"usage"`
