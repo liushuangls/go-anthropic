@@ -87,6 +87,14 @@ type MessageSystemPart struct {
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
+func NewMultiSystemMessages(texts ...string) []MessageSystemPart {
+	var result []MessageSystemPart
+	for _, text := range texts {
+		result = append(result, NewSystemMessagePart(text))
+	}
+	return result
+}
+
 func NewSystemMessagePart(text string) MessageSystemPart {
 	return MessageSystemPart{
 		Type: "text",
