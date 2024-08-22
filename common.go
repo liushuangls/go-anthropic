@@ -17,5 +17,4 @@ type ChatRole string
 const (
 	RoleUser      ChatRole = "user"
 	RoleAssistant ChatRole = "assistant"
-	
 )
