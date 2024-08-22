@@ -87,6 +87,13 @@ type MessageSystemPart struct {
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
+func NewSystemMessagePart(text string) MessageSystemPart {
+	return MessageSystemPart{
+		Type: "text",
+		Text: text,
+	}
+}
+
 type Message struct {
 	Role    ChatRole         `json:"role"`
 	Content []MessageContent `json:"content"`
