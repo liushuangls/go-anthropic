@@ -1,6 +1,7 @@
 package anthropic
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -26,20 +27,38 @@ type RateLimitHeaders struct {
 func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 	errs := []error{}
 
+	// Requests
 	requestsLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-limit"))
-	errs = append(errs, err)
+	if err != nil {
+		err = fmt.Errorf("failed to parse anthropic-ratelimit-requests-limit: %w", err)
+		errs = append(errs, err)
+	}
 	requestsRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-remaining"))
-	errs = append(errs, err)
+	if err != nil {
+		err = fmt.Errorf("failed to parse anthropic-ratelimit-requests-remaining: %w", err)
+		errs = append(errs, err)
+	}
 	requestsReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-requests-reset"))
-	errs = append(errs, err)
+	if err != nil {
+		err = fmt.Errorf("failed to parse anthropic-ratelimit-requests-reset: %w", err)
+		errs = append(errs, err)
+	}
 
+	// Tokens
 	tokensLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-limit"))
-	errs = append(errs, err)
+	if err != nil {
+		err = fmt.Errorf("failed to parse anthropropic-ratelimit-tokens-limit: %w", err)
+		errs = append(errs, err)
+	}
 	tokensRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-remaining"))
-	errs = append(errs, err)
+	if err != nil {
+		err = fmt.Errorf("failed to parse anthropropic-ratelimit-tokens-remaining: %w", err)
+		errs = append(errs, err)
+	}
 	tokensReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-tokens-reset"))
 	errs = append(errs, err)
 
+	// RetryAfter
 	retryAfter, err := strconv.Atoi(h.Get("retry-after"))
 	if err != nil {
 		retryAfter = -1

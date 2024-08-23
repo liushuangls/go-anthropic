@@ -64,6 +64,12 @@ func TestMessagesStream(t *testing.T) {
 		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, resp.GetFirstContentText())
 	}
 
+	headers, err := resp.GetRateLimitHeaders()
+	if err != nil {
+		t.Fatalf("CreateMessagesStream GetRateLimitHeaders error: %s", err)
+	}
+	t.Logf("CreateMessagesStream rate limit headers: %+v", headers)
+
 	t.Logf("CreateMessagesStream resp: %+v", resp)
 }
 
@@ -300,6 +306,14 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream")
+
+	w.Header().Set("anthropic-ratelimit-requests-limit", "1000")
+	w.Header().Set("anthropic-ratelimit-requests-remaining", "999")
+	w.Header().Set("anthropic-ratelimit-requests-reset", "2022-01-01T00:00:00Z")
+	w.Header().Set("anthropic-ratelimit-tokens-limit", "1000")
+	w.Header().Set("anthropic-ratelimit-tokens-remaining", "999")
+	w.Header().Set("anthropic-ratelimit-tokens-reset", "2022-01-01T00:00:00Z")
+	w.Header().Set("retry-after", "0")
 
 	var dataBytes []byte
 

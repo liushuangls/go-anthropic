@@ -163,6 +163,7 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 					request.OnMessageStart(d)
 				}
 				response = d.Message
+				response.SetHeader(resp.Header)
 				continue
 			case MessagesEventContentBlockStart:
 				var d MessagesEventContentBlockStartData
