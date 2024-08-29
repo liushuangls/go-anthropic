@@ -28,7 +28,7 @@ var rateLimitHeaders = map[string]string{
 	"anthropic-ratelimit-tokens-limit":       "10000",
 	"anthropic-ratelimit-tokens-remaining":   "9900",
 	"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
-	"retry-after":                            "100",
+	"retry-after":                            "", // retry-after is optional and may not be present.
 }
 
 func TestMessages(t *testing.T) {
@@ -360,41 +360,91 @@ func TestMessagesToolUse(t *testing.T) {
 }
 
 func TestMessagesRateLimitHeaders(t *testing.T) {
-	t.Run("parses valid rate limit headers", func(t *testing.T) {
-		resp, err := getRespWithHeaders(rateLimitHeaders)
-		if err != nil {
-			t.Fatalf("CreateMessages error: %v", err)
-		}
+	expectedSuccess := map[string]any{
+		"anthropic-ratelimit-requests-limit":     100,
+		"anthropic-ratelimit-requests-remaining": 99,
+		"anthropic-ratelimit-requests-reset":     "2024-06-04T07:13:19Z",
+		"anthropic-ratelimit-tokens-limit":       10000,
+		"anthropic-ratelimit-tokens-remaining":   9900,
+		"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
+		"retry-after":                            -1, // if not present, should be -1
+	}
 
-		rlHeaders, err := resp.GetRateLimitHeaders()
-		if err != nil {
-			t.Fatalf("GetRateLimitHeaders error: %v", err)
-		}
+	requestFailRateLimitHeaders := make(map[string]string)
+	for k, v := range rateLimitHeaders {
+		requestFailRateLimitHeaders[k] = v
+	}
+	requestFailRateLimitHeaders["retry-after"] = "10"
 
-		bs, err := json.Marshal(rlHeaders)
-		if err != nil {
-			t.Fatal(err)
-		}
+	expectedFail := make(map[string]any)
+	for k, v := range expectedSuccess {
+		expectedFail[k] = v
+	}
+	expectedFail["retry-after"] = 10
 
-		var expectedHeaders = map[string]any{
-			"anthropic-ratelimit-requests-limit":     100,
-			"anthropic-ratelimit-requests-remaining": 99,
-			"anthropic-ratelimit-requests-reset":     "2024-06-04T07:13:19Z",
-			"anthropic-ratelimit-tokens-limit":       10000,
-			"anthropic-ratelimit-tokens-remaining":   9900,
-			"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
-			"retry-after":                            100,
-		}
+	headerConfigs := []struct {
+		name     string
+		header   map[string]string
+		expected map[string]any
+	}{
+		{
+			name:     "parses rate limit headers for successful request",
+			header:   rateLimitHeaders,
+			expected: expectedSuccess,
+		},
+		{
+			name:     "parses rate limit headers for failed request",
+			header:   requestFailRateLimitHeaders,
+			expected: expectedFail,
+		},
+	}
 
-		bs2, err := json.Marshal(expectedHeaders)
-		if err != nil {
-			t.Fatal(err)
-		}
+	for _, c := range headerConfigs {
+		t.Run(c.name, func(t *testing.T) {
+			server := test.NewTestServer()
+			server.RegisterHandler("/v1/messages", handleMessagesEndpoint(c.header))
 
-		if string(bs) != string(bs2) {
-			t.Fatalf("rate limit headers mismatch. got %s, want %s", string(bs), string(bs2))
-		}
-	})
+			ts := server.AnthropicTestServer()
+			ts.Start()
+			defer ts.Close()
+
+			baseUrl := ts.URL + "/v1"
+			client := anthropic.NewClient(
+				test.GetTestToken(),
+				anthropic.WithBaseURL(baseUrl),
+			)
+
+			resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+				Model: anthropic.ModelClaude3Haiku20240307,
+				Messages: []anthropic.Message{
+					anthropic.NewUserTextMessage("What is your name?"),
+				},
+				MaxTokens: 1000,
+			})
+			if err != nil {
+				t.Fatalf("CreateMessages error: %v", err)
+			}
+
+			rlHeaders, err := resp.GetRateLimitHeaders()
+			if err != nil {
+				t.Fatalf("GetRateLimitHeaders error: %v", err)
+			}
+
+			bs, err := json.Marshal(rlHeaders)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			bs2, err := json.Marshal(c.expected)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if string(bs) != string(bs2) {
+				t.Fatalf("rate limit headers mismatch. got %s, want %s", string(bs), string(bs2))
+			}
+		})
+	}
 
 	t.Run("returns error for missing rate limit headers", func(t *testing.T) {
 		invalidHeaders := map[string]string{}
