@@ -41,7 +41,9 @@ func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 	errs = append(errs, err)
 
 	retryAfter, err := strconv.Atoi(h.Get("retry-after"))
-	errs = append(errs, err)
+	if err != nil {
+		retryAfter = -1
+	}
 
 	headers := RateLimitHeaders{
 		RequestsLimit:     requestsLimit,
