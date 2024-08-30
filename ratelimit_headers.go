@@ -1,9 +1,23 @@
 package anthropic
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+)
+
+type rateLimitHeaderKey string
+
+const (
+	requestsLimit     rateLimitHeaderKey = "anthropic-ratelimit-requests-limit"
+	requestsRemaining rateLimitHeaderKey = "anthropic-ratelimit-requests-remaining"
+	requestsReset     rateLimitHeaderKey = "anthropic-ratelimit-requests-reset"
+	tokensLimit       rateLimitHeaderKey = "anthropic-ratelimit-tokens-limit"
+	tokensRemaining   rateLimitHeaderKey = "anthropic-ratelimit-tokens-remaining"
+	tokensReset       rateLimitHeaderKey = "anthropic-ratelimit-tokens-reset"
+	retryAfter        rateLimitHeaderKey = "retry-after"
 )
 
 type RateLimitHeaders struct {
@@ -24,41 +38,48 @@ type RateLimitHeaders struct {
 }
 
 func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
-	errs := []error{}
+	var errs []error
 
-	requestsLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-limit"))
-	errs = append(errs, err)
-	requestsRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-remaining"))
-	errs = append(errs, err)
-	requestsReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-requests-reset"))
-	errs = append(errs, err)
-
-	tokensLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-limit"))
-	errs = append(errs, err)
-	tokensRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-remaining"))
-	errs = append(errs, err)
-	tokensReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-tokens-reset"))
-	errs = append(errs, err)
-
-	retryAfter, err := strconv.Atoi(h.Get("retry-after"))
-	if err != nil {
-		retryAfter = -1
-	}
-
-	headers := RateLimitHeaders{
-		RequestsLimit:     requestsLimit,
-		RequestsRemaining: requestsRemaining,
-		RequestsReset:     requestsReset,
-		TokensLimit:       tokensLimit,
-		TokensRemaining:   tokensRemaining,
-		TokensReset:       tokensReset,
-		RetryAfter:        retryAfter,
-	}
-
-	for _, e := range errs {
-		if e != nil {
-			return headers, e
+	parseIntHeader := func(key rateLimitHeaderKey, required bool) int {
+		value, err := strconv.Atoi(h.Get(string(key)))
+		if err != nil {
+			if !required {
+				return -1
+			}
+			errs = append(errs, fmt.Errorf("failed to parse %s: %w", key, err))
+			return 0
 		}
+		return value
 	}
+
+	parseTimeHeader := func(key rateLimitHeaderKey, required bool) time.Time {
+		value, err := time.Parse(time.RFC3339, h.Get(string(key)))
+		if err != nil {
+			if !required {
+				return time.Time{}
+			}
+			errs = append(errs, fmt.Errorf("failed to parse %s: %w", key, err))
+			return time.Time{}
+		}
+		return value
+	}
+
+	headers := RateLimitHeaders{}
+	headers.RequestsLimit = parseIntHeader(requestsLimit, true)
+	headers.RequestsRemaining = parseIntHeader(requestsRemaining, true)
+	headers.RequestsReset = parseTimeHeader(requestsReset, true)
+
+	headers.TokensLimit = parseIntHeader(tokensLimit, true)
+	headers.TokensRemaining = parseIntHeader(tokensRemaining, true)
+	headers.TokensReset = parseTimeHeader(tokensReset, true)
+
+	headers.RetryAfter = parseIntHeader(retryAfter, false) // optional
+
+	if len(errs) > 0 {
+		return headers, fmt.Errorf("error(s) parsing rate limit headers: %w",
+			errors.Join(errs...),
+		)
+	}
+
 	return headers, nil
 }
