@@ -8,6 +8,18 @@ import (
 	"time"
 )
 
+type rateLimitHeaderKey string
+
+const (
+	requestsLimit     rateLimitHeaderKey = "anthropic-ratelimit-requests-limit"
+	requestsRemaining rateLimitHeaderKey = "anthropic-ratelimit-requests-remaining"
+	requestsReset     rateLimitHeaderKey = "anthropic-ratelimit-requests-reset"
+	tokensLimit       rateLimitHeaderKey = "anthropic-ratelimit-tokens-limit"
+	tokensRemaining   rateLimitHeaderKey = "anthropic-ratelimit-tokens-remaining"
+	tokensReset       rateLimitHeaderKey = "anthropic-ratelimit-tokens-reset"
+	retryAfter        rateLimitHeaderKey = "retry-after"
+)
+
 type RateLimitHeaders struct {
 	// The maximum number of requests allowed within the rate limit window.
 	RequestsLimit int `json:"anthropic-ratelimit-requests-limit"`
@@ -28,8 +40,8 @@ type RateLimitHeaders struct {
 func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 	var errs []error
 
-	parseHeader := func(key string, required bool) int {
-		value, err := strconv.Atoi(h.Get(key))
+	parseIntHeader := func(key rateLimitHeaderKey, required bool) int {
+		value, err := strconv.Atoi(h.Get(string(key)))
 		if err != nil {
 			if !required {
 				return -1
@@ -40,8 +52,8 @@ func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 		return value
 	}
 
-	parseTimeHeader := func(key string, required bool) time.Time {
-		value, err := time.Parse(time.RFC3339, h.Get(key))
+	parseTimeHeader := func(key rateLimitHeaderKey, required bool) time.Time {
+		value, err := time.Parse(time.RFC3339, h.Get(string(key)))
 		if err != nil {
 			if !required {
 				return time.Time{}
@@ -53,18 +65,20 @@ func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 	}
 
 	headers := RateLimitHeaders{}
-	headers.RequestsLimit = parseHeader("anthropic-ratelimit-requests-limit", true)
-	headers.RequestsRemaining = parseHeader("anthropic-ratelimit-requests-remaining", true)
-	headers.RequestsReset = parseTimeHeader("anthropic-ratelimit-requests-reset", true)
+	headers.RequestsLimit = parseIntHeader(requestsLimit, true)
+	headers.RequestsRemaining = parseIntHeader(requestsRemaining, true)
+	headers.RequestsReset = parseTimeHeader(requestsReset, true)
 
-	headers.TokensLimit = parseHeader("anthropic-ratelimit-tokens-limit", true)
-	headers.TokensRemaining = parseHeader("anthropic-ratelimit-tokens-remaining", true)
-	headers.TokensReset = parseTimeHeader("anthropic-ratelimit-tokens-reset", true)
+	headers.TokensLimit = parseIntHeader(tokensLimit, true)
+	headers.TokensRemaining = parseIntHeader(tokensRemaining, true)
+	headers.TokensReset = parseTimeHeader(tokensReset, true)
 
-	headers.RetryAfter = parseHeader("retry-after", false) // optional
+	headers.RetryAfter = parseIntHeader(retryAfter, false) // optional
 
 	if len(errs) > 0 {
-		return headers, fmt.Errorf("multiple errors occurred: %w", errors.Join(errs...))
+		return headers, fmt.Errorf("error(s) parsing rate limit headers: %w",
+			errors.Join(errs...),
+		)
 	}
 
 	return headers, nil
