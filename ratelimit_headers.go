@@ -25,23 +25,20 @@ type RateLimitHeaders struct {
 
 func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 	errs := []error{}
-	collectError := func(err error) {
-		errs = append(errs, err)
-	}
 
 	requestsLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-limit"))
-	collectError(err)
+	errs = append(errs, err)
 	requestsRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-remaining"))
-	collectError(err)
+	errs = append(errs, err)
 	requestsReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-requests-reset"))
-	collectError(err)
+	errs = append(errs, err)
 
 	tokensLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-limit"))
-	collectError(err)
+	errs = append(errs, err)
 	tokensRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-remaining"))
-	collectError(err)
+	errs = append(errs, err)
 	tokensReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-tokens-reset"))
-	collectError(err)
+	errs = append(errs, err)
 
 	retryAfter, err := strconv.Atoi(h.Get("retry-after"))
 	if err != nil {
