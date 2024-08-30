@@ -25,59 +25,43 @@ type RateLimitHeaders struct {
 }
 
 func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
-	errs := []error{}
+	var errs []error
 
-	// Requests
-	requestsLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-limit"))
-	if err != nil {
-		err = fmt.Errorf("failed to parse anthropic-ratelimit-requests-limit: %w", err)
-		errs = append(errs, err)
-	}
-	requestsRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-requests-remaining"))
-	if err != nil {
-		err = fmt.Errorf("failed to parse anthropic-ratelimit-requests-remaining: %w", err)
-		errs = append(errs, err)
-	}
-	requestsReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-requests-reset"))
-	if err != nil {
-		err = fmt.Errorf("failed to parse anthropic-ratelimit-requests-reset: %w", err)
-		errs = append(errs, err)
-	}
-
-	// Tokens
-	tokensLimit, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-limit"))
-	if err != nil {
-		err = fmt.Errorf("failed to parse anthropropic-ratelimit-tokens-limit: %w", err)
-		errs = append(errs, err)
-	}
-	tokensRemaining, err := strconv.Atoi(h.Get("anthropic-ratelimit-tokens-remaining"))
-	if err != nil {
-		err = fmt.Errorf("failed to parse anthropropic-ratelimit-tokens-remaining: %w", err)
-		errs = append(errs, err)
-	}
-	tokensReset, err := time.Parse(time.RFC3339, h.Get("anthropic-ratelimit-tokens-reset"))
-	errs = append(errs, err)
-
-	// RetryAfter
-	retryAfter, err := strconv.Atoi(h.Get("retry-after"))
-	if err != nil {
-		retryAfter = -1
-	}
-
-	headers := RateLimitHeaders{
-		RequestsLimit:     requestsLimit,
-		RequestsRemaining: requestsRemaining,
-		RequestsReset:     requestsReset,
-		TokensLimit:       tokensLimit,
-		TokensRemaining:   tokensRemaining,
-		TokensReset:       tokensReset,
-		RetryAfter:        retryAfter,
-	}
-
-	for _, e := range errs {
-		if e != nil {
-			return headers, e
+	parseHeader := func(key string) int {
+		value, err := strconv.Atoi(h.Get(key))
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to parse %s: %w", key, err))
+			return 0
 		}
+		return value
 	}
+
+	parseTimeHeader := func(key string) time.Time {
+		value, err := time.Parse(time.RFC3339, h.Get(key))
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to parse %s: %w", key, err))
+			return time.Time{}
+		}
+		return value
+	}
+
+	headers := RateLimitHeaders{}
+	headers.RequestsLimit = parseHeader("anthropic-ratelimit-requests-limit")
+	headers.RequestsRemaining = parseHeader("anthropic-ratelimit-requests-remaining")
+	headers.RequestsReset = parseTimeHeader("anthropic-ratelimit-requests-reset")
+
+	headers.TokensLimit = parseHeader("anthropic-ratelimit-tokens-limit")
+	headers.TokensRemaining = parseHeader("anthropic-ratelimit-tokens-remaining")
+	headers.TokensReset = parseTimeHeader("anthropic-ratelimit-tokens-reset")
+
+	headers.RetryAfter = parseHeader("retry-after")
+	if headers.RetryAfter == 0 && len(errs) > 0 {
+		headers.RetryAfter = -1
+	}
+
+	if len(errs) > 0 {
+		return headers, fmt.Errorf("multiple errors occurred: %v", errs)
+	}
+
 	return headers, nil
 }
