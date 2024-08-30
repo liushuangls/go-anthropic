@@ -1,6 +1,7 @@
 package anthropic
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -27,18 +28,24 @@ type RateLimitHeaders struct {
 func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 	var errs []error
 
-	parseHeader := func(key string) int {
+	parseHeader := func(key string, required bool) int {
 		value, err := strconv.Atoi(h.Get(key))
 		if err != nil {
+			if !required {
+				return -1
+			}
 			errs = append(errs, fmt.Errorf("failed to parse %s: %w", key, err))
 			return 0
 		}
 		return value
 	}
 
-	parseTimeHeader := func(key string) time.Time {
+	parseTimeHeader := func(key string, required bool) time.Time {
 		value, err := time.Parse(time.RFC3339, h.Get(key))
 		if err != nil {
+			if !required {
+				return time.Time{}
+			}
 			errs = append(errs, fmt.Errorf("failed to parse %s: %w", key, err))
 			return time.Time{}
 		}
@@ -46,21 +53,18 @@ func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 	}
 
 	headers := RateLimitHeaders{}
-	headers.RequestsLimit = parseHeader("anthropic-ratelimit-requests-limit")
-	headers.RequestsRemaining = parseHeader("anthropic-ratelimit-requests-remaining")
-	headers.RequestsReset = parseTimeHeader("anthropic-ratelimit-requests-reset")
+	headers.RequestsLimit = parseHeader("anthropic-ratelimit-requests-limit", true)
+	headers.RequestsRemaining = parseHeader("anthropic-ratelimit-requests-remaining", true)
+	headers.RequestsReset = parseTimeHeader("anthropic-ratelimit-requests-reset", true)
 
-	headers.TokensLimit = parseHeader("anthropic-ratelimit-tokens-limit")
-	headers.TokensRemaining = parseHeader("anthropic-ratelimit-tokens-remaining")
-	headers.TokensReset = parseTimeHeader("anthropic-ratelimit-tokens-reset")
+	headers.TokensLimit = parseHeader("anthropic-ratelimit-tokens-limit", true)
+	headers.TokensRemaining = parseHeader("anthropic-ratelimit-tokens-remaining", true)
+	headers.TokensReset = parseTimeHeader("anthropic-ratelimit-tokens-reset", true)
 
-	headers.RetryAfter = parseHeader("retry-after")
-	if headers.RetryAfter == 0 && len(errs) > 0 {
-		headers.RetryAfter = -1
-	}
+	headers.RetryAfter = parseHeader("retry-after", false) // optional
 
 	if len(errs) > 0 {
-		return headers, fmt.Errorf("multiple errors occurred: %v", errs)
+		return headers, fmt.Errorf("multiple errors occurred: %w", errors.Join(errs...))
 	}
 
 	return headers, nil
