@@ -6,7 +6,7 @@ import (
 )
 
 type CompleteRequest struct {
-	Model             string `json:"model"`
+	Model             Model  `json:"model"`
 	Prompt            string `json:"prompt"`
 	MaxTokensToSample int    `json:"max_tokens_to_sample"`
 
@@ -38,7 +38,7 @@ type CompleteResponse struct {
 	Completion string `json:"completion"`
 	// possible values are: stop_sequence、max_tokens、null
 	StopReason string `json:"stop_reason"`
-	Model      string `json:"model"`
+	Model      Model  `json:"model"`
 }
 
 func (c *Client) CreateComplete(ctx context.Context, request CompleteRequest) (response CompleteResponse, err error) {

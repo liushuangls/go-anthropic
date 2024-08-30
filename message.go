@@ -34,7 +34,7 @@ const (
 )
 
 type MessagesRequest struct {
-	Model     string    `json:"model"`
+	Model     Model     `json:"model"`
 	Messages  []Message `json:"messages"`
 	MaxTokens int       `json:"max_tokens"`
 
@@ -87,8 +87,23 @@ type MessageSystemPart struct {
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
+func NewMultiSystemMessages(texts ...string) []MessageSystemPart {
+	var systemParts []MessageSystemPart
+	for _, text := range texts {
+		systemParts = append(systemParts, NewSystemMessagePart(text))
+	}
+	return systemParts
+}
+
+func NewSystemMessagePart(text string) MessageSystemPart {
+	return MessageSystemPart{
+		Type: "text",
+		Text: text,
+	}
+}
+
 type Message struct {
-	Role    string           `json:"role"`
+	Role    ChatRole         `json:"role"`
 	Content []MessageContent `json:"content"`
 }
 
@@ -169,12 +184,8 @@ func NewToolResultMessageContent(toolUseID, content string, isError bool) Messag
 
 func NewToolUseMessageContent(toolUseID, name string, input json.RawMessage) MessageContent {
 	return MessageContent{
-		Type: MessagesContentTypeToolUse,
-		MessageContentToolUse: &MessageContentToolUse{
-			ID:    toolUseID,
-			Name:  name,
-			Input: input,
-		},
+		Type:                  MessagesContentTypeToolUse,
+		MessageContentToolUse: NewMessageContentToolUse(toolUseID, name, input),
 	}
 }
 
@@ -252,10 +263,26 @@ type MessageContentImageSource struct {
 	Data      any    `json:"data"`
 }
 
+func NewMessageContentImageSource(imageSourceType, mediaType string, data any) MessageContentImageSource {
+	return MessageContentImageSource{
+		Type:      imageSourceType,
+		MediaType: mediaType,
+		Data:      data,
+	}
+}
+
 type MessageContentToolUse struct {
 	ID    string          `json:"id,omitempty"`
 	Name  string          `json:"name,omitempty"`
 	Input json.RawMessage `json:"input,omitempty"`
+}
+
+func NewMessageContentToolUse(toolUseId, name string, input json.RawMessage) *MessageContentToolUse {
+	return &MessageContentToolUse{
+		ID:    toolUseId,
+		Name:  name,
+		Input: input,
+	}
 }
 
 func (c *MessageContentToolUse) UnmarshalInput(v any) error {
@@ -267,9 +294,9 @@ type MessagesResponse struct {
 
 	ID           string               `json:"id"`
 	Type         MessagesResponseType `json:"type"`
-	Role         string               `json:"role"`
+	Role         ChatRole             `json:"role"`
 	Content      []MessageContent     `json:"content"`
-	Model        string               `json:"model"`
+	Model        Model                `json:"model"`
 	StopReason   MessagesStopReason   `json:"stop_reason"`
 	StopSequence string               `json:"stop_sequence"`
 	Usage        MessagesUsage        `json:"usage"`
