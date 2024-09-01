@@ -10,7 +10,6 @@ import (
 
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/internal/test"
-	"github.com/liushuangls/go-anthropic/v2/internal/test/checks"
 )
 
 var (
@@ -88,7 +87,9 @@ func TestCompleteStreamError(t *testing.T) {
 	}
 	param.SetTemperature(2)
 	_, err := client.CreateCompleteStream(context.Background(), param)
-	checks.HasError(t, err, "should error")
+	if err == nil {
+		t.Fatal("should error")
+	}
 
 	var e *anthropic.APIError
 	if !errors.As(err, &e) {

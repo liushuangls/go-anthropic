@@ -14,7 +14,6 @@ import (
 
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/internal/test"
-	"github.com/liushuangls/go-anthropic/v2/internal/test/checks"
 	"github.com/liushuangls/go-anthropic/v2/jsonschema"
 )
 
@@ -271,7 +270,9 @@ func TestMessagesTokenError(t *testing.T) {
 		},
 		MaxTokens: 1000,
 	})
-	checks.HasError(t, err, "should error")
+	if err == nil {
+		t.Fatal("should error")
+	}
 
 	var e *anthropic.RequestError
 	if !errors.As(err, &e) {
