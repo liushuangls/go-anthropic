@@ -82,7 +82,10 @@ type MessagesEventMessageStopData struct {
 	Type string `json:"type"`
 }
 
-func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStreamRequest) (response MessagesResponse, err error) {
+func (c *Client) CreateMessagesStream(
+	ctx context.Context,
+	request MessagesStreamRequest,
+) (response MessagesResponse, err error) {
 	request.Stream = true
 
 	var setters []requestSetter

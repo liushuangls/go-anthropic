@@ -244,7 +244,10 @@ type MessageContentToolResult struct {
 	IsError   *bool            `json:"is_error,omitempty"`
 }
 
-func NewMessageContentToolResult(toolUseID, content string, isError bool) *MessageContentToolResult {
+func NewMessageContentToolResult(
+	toolUseID, content string,
+	isError bool,
+) *MessageContentToolResult {
 	return &MessageContentToolResult{
 		ToolUseID: &toolUseID,
 		Content: []MessageContent{
@@ -263,7 +266,10 @@ type MessageContentImageSource struct {
 	Data      any    `json:"data"`
 }
 
-func NewMessageContentImageSource(imageSourceType, mediaType string, data any) MessageContentImageSource {
+func NewMessageContentImageSource(
+	imageSourceType, mediaType string,
+	data any,
+) MessageContentImageSource {
 	return MessageContentImageSource{
 		Type:      imageSourceType,
 		MediaType: mediaType,
@@ -277,7 +283,10 @@ type MessageContentToolUse struct {
 	Input json.RawMessage `json:"input,omitempty"`
 }
 
-func NewMessageContentToolUse(toolUseId, name string, input json.RawMessage) *MessageContentToolUse {
+func NewMessageContentToolUse(
+	toolUseId, name string,
+	input json.RawMessage,
+) *MessageContentToolUse {
 	return &MessageContentToolUse{
 		ID:    toolUseId,
 		Name:  name,
@@ -337,7 +346,10 @@ type ToolChoice struct {
 	Name string `json:"name,omitempty"`
 }
 
-func (c *Client) CreateMessages(ctx context.Context, request MessagesRequest) (response MessagesResponse, err error) {
+func (c *Client) CreateMessages(
+	ctx context.Context,
+	request MessagesRequest,
+) (response MessagesResponse, err error) {
 	request.Stream = false
 
 	var setters []requestSetter

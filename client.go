@@ -93,7 +93,12 @@ func withBetaVersion(betaVersion ...BetaVersion) requestSetter {
 	}
 }
 
-func (c *Client) newRequest(ctx context.Context, method, urlSuffix string, body any, requestSetters ...requestSetter) (req *http.Request, err error) {
+func (c *Client) newRequest(
+	ctx context.Context,
+	method, urlSuffix string,
+	body any,
+	requestSetters ...requestSetter,
+) (req *http.Request, err error) {
 	var reqBody []byte
 	if body != nil {
 		reqBody, err = json.Marshal(body)
@@ -102,7 +107,12 @@ func (c *Client) newRequest(ctx context.Context, method, urlSuffix string, body 
 		}
 	}
 
-	req, err = http.NewRequestWithContext(ctx, method, c.fullURL(urlSuffix), bytes.NewBuffer(reqBody))
+	req, err = http.NewRequestWithContext(
+		ctx,
+		method,
+		c.fullURL(urlSuffix),
+		bytes.NewBuffer(reqBody),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +129,12 @@ func (c *Client) newRequest(ctx context.Context, method, urlSuffix string, body 
 	return req, nil
 }
 
-func (c *Client) newStreamRequest(ctx context.Context, method, urlSuffix string, body any, requestSetters ...requestSetter) (req *http.Request,
+func (c *Client) newStreamRequest(
+	ctx context.Context,
+	method, urlSuffix string,
+	body any,
+	requestSetters ...requestSetter,
+) (req *http.Request,
 	err error) {
 	req, err = c.newRequest(ctx, method, urlSuffix, body, requestSetters...)
 	if err != nil {

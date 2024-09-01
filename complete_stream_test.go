@@ -50,10 +50,18 @@ func TestCompleteStream(t *testing.T) {
 
 	expected := strings.Join(testCompletionStreamContent, "")
 	if receivedContent != expected {
-		t.Fatalf("CreateCompleteStream content not match expected: %s, got: %s", expected, receivedContent)
+		t.Fatalf(
+			"CreateCompleteStream content not match expected: %s, got: %s",
+			expected,
+			receivedContent,
+		)
 	}
 	if resp.Completion != expected {
-		t.Fatalf("CreateCompleteStream content not match expected: %s, got: %s", expected, resp.Completion)
+		t.Fatalf(
+			"CreateCompleteStream content not match expected: %s, got: %s",
+			expected,
+			resp.Completion,
+		)
 	}
 	t.Logf("CreateCompleteStream resp: %+v", resp)
 }
@@ -114,16 +122,31 @@ func handlerCompleteStream(w http.ResponseWriter, r *http.Request) {
 
 	if request.Temperature != nil && *request.Temperature > 1 {
 		dataBytes = append(dataBytes, []byte("event: error\n")...)
-		dataBytes = append(dataBytes, []byte(`data: {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}`+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(
+				`data: {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}`+"\n\n",
+			)...)
 	}
 
 	for _, t := range testCompletionStreamContent {
 		dataBytes = append(dataBytes, []byte("event: completion\n")...)
-		dataBytes = append(dataBytes, []byte(fmt.Sprintf(`data: {"type":"completion","id":"compl_01GatBXF5t5K51mYzbVgRJfZ","completion":"%s","stop_reason":null,"model":"claude-instant-1.2","stop":null,"log_id":"compl_01GatBXF5t5K51mYzbVgRJfZ"}`, t)+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(
+				fmt.Sprintf(
+					`data: {"type":"completion","id":"compl_01GatBXF5t5K51mYzbVgRJfZ","completion":"%s","stop_reason":null,"model":"claude-instant-1.2","stop":null,"log_id":"compl_01GatBXF5t5K51mYzbVgRJfZ"}`,
+					t,
+				)+"\n\n",
+			)...)
 	}
 
 	dataBytes = append(dataBytes, []byte("event: completion\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"completion","id":"compl_01GatBXF5t5K51mYzbVgRJfZ","completion":"","stop_reason":"stop_sequence","model":"claude-instant-1.2","stop":null,"log_id":"compl_01GatBXF5t5K51mYzbVgRJfZ"}`+"\n\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"completion","id":"compl_01GatBXF5t5K51mYzbVgRJfZ","completion":"","stop_reason":"stop_sequence","model":"claude-instant-1.2","stop":null,"log_id":"compl_01GatBXF5t5K51mYzbVgRJfZ"}`+"\n\n",
+		)...)
 
 	_, _ = w.Write(dataBytes)
 }
