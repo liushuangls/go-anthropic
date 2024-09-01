@@ -17,7 +17,7 @@ func TestIntegrationComplete(t *testing.T) {
 		request := anthropic.CompleteRequest{
 			Model:             anthropic.ModelClaudeInstant1Dot2,
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
-			MaxTokensToSample: 1000,
+			MaxTokensToSample: 10,
 		}
 
 		resp, err := client.CreateComplete(ctx, request)
