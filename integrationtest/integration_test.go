@@ -11,6 +11,6 @@ var (
 
 func testAPIKey(t *testing.T) {
 	if APIKey == "" {
-		t.Fatal("ANTHROPIC_API_KEY must be set for integration tests")
+		t.Fatal("ANTHROPIC_KEY must be set for integration tests")
 	}
 }
