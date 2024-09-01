@@ -79,9 +79,9 @@ func (c *Client) fullURL(suffix string) string {
 
 type requestSetter func(req *http.Request)
 
-func withBetaVersion(version string) requestSetter {
+func withBetaVersion(version BetaVersion) requestSetter {
 	return func(req *http.Request) {
-		req.Header.Set("anthropic-beta", version)
+		req.Header.Set("anthropic-beta", string(version))
 	}
 }
 
@@ -102,7 +102,7 @@ func (c *Client) newRequest(ctx context.Context, method, urlSuffix string, body 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Accept", "application/json; charset=utf-8")
 	req.Header.Set("X-Api-Key", c.config.apiKey)
-	req.Header.Set("Anthropic-Version", c.config.APIVersion)
+	req.Header.Set("Anthropic-Version", string(c.config.APIVersion))
 
 	for _, setter := range requestSetters {
 		setter(req)
