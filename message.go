@@ -59,7 +59,6 @@ func (m MessagesRequest) MarshalJSON() ([]byte, error) {
 		Alias: (Alias)(m),
 	}
 
-	// 根据 MultiSystem 是否为空来设置 system 字段
 	if len(m.MultiSystem) > 0 {
 		aux.System = m.MultiSystem
 	} else if len(m.System) > 0 {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/internal/test"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -17,6 +18,7 @@ var (
 )
 
 func TestCompleteStream(t *testing.T) {
+	is := require.New(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/complete", handlerCompleteStream)
 
@@ -38,26 +40,21 @@ func TestCompleteStream(t *testing.T) {
 		},
 		OnCompletion: func(data anthropic.CompleteResponse) {
 			receivedContent += data.Completion
-			//t.Logf("CreateCompleteStream OnCompletion data: %+v", data)
 		},
 		OnPing:  func(data anthropic.CompleteStreamPingData) {},
 		OnError: func(response anthropic.ErrorResponse) {},
 	})
-	if err != nil {
-		t.Fatalf("CreateCompleteStream error: %s", err)
-	}
+	is.NoError(err)
 
 	expected := strings.Join(testCompletionStreamContent, "")
-	if receivedContent != expected {
-		t.Fatalf("CreateCompleteStream content not match expected: %s, got: %s", expected, receivedContent)
-	}
-	if resp.Completion != expected {
-		t.Fatalf("CreateCompleteStream content not match expected: %s, got: %s", expected, resp.Completion)
-	}
+	is.Equal(expected, receivedContent)
+	is.Equal(expected, resp.Completion)
+
 	t.Logf("CreateCompleteStream resp: %+v", resp)
 }
 
 func TestCompleteStreamError(t *testing.T) {
+	is := require.New(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/complete", handlerCompleteStream)
 
@@ -76,25 +73,20 @@ func TestCompleteStreamError(t *testing.T) {
 			Model:             anthropic.ModelClaudeInstant1Dot2,
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 			MaxTokensToSample: 1000,
-			//Temperature:       &temperature,
 		},
 		OnCompletion: func(data anthropic.CompleteResponse) {
 			receivedContent += data.Completion
-			//t.Logf("CreateCompleteStream OnCompletion data: %+v", data)
 		},
 		OnPing:  func(data anthropic.CompleteStreamPingData) {},
 		OnError: func(response anthropic.ErrorResponse) {},
 	}
 	param.SetTemperature(2)
 	_, err := client.CreateCompleteStream(context.Background(), param)
-	if err == nil {
-		t.Fatal("should error")
-	}
+	is.Error(err)
+	is.Contains(err.Error(), "Overloaded")
 
 	var e *anthropic.APIError
-	if !errors.As(err, &e) {
-		t.Fatal("should api error")
-	}
+	is.True(errors.As(err, &e), "should api error")
 
 	t.Logf("CreateCompleteStream error: %+v", err)
 }

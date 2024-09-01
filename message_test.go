@@ -15,6 +15,7 @@ import (
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/internal/test"
 	"github.com/liushuangls/go-anthropic/v2/jsonschema"
+	"github.com/stretchr/testify/require"
 )
 
 //go:embed internal/test/sources/*
@@ -31,6 +32,8 @@ var rateLimitHeaders = map[string]string{
 }
 
 func TestMessages(t *testing.T) {
+	is := require.New(t)
+
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -55,9 +58,7 @@ func TestMessages(t *testing.T) {
 			},
 			MaxTokens: 1000,
 		})
-		if err != nil {
-			t.Fatalf("CreateMessages error: %v", err)
-		}
+		is.NoError(err)
 
 		t.Logf("CreateMessages resp: %+v", resp)
 	})
@@ -71,9 +72,7 @@ func TestMessages(t *testing.T) {
 			MaxTokens: 1000,
 			System:    "test system message",
 		})
-		if err != nil {
-			t.Fatalf("CreateMessages error: %v", err)
-		}
+		is.NoError(err)
 
 		t.Logf("CreateMessages resp: %+v", resp)
 	})
@@ -87,9 +86,7 @@ func TestMessages(t *testing.T) {
 			MaxTokens:   1000,
 			MultiSystem: anthropic.NewMultiSystemMessages("test single multi-system message"),
 		})
-		if err != nil {
-			t.Fatalf("CreateMessages error: %v", err)
-		}
+		is.NoError(err)
 
 		t.Logf("CreateMessages resp: %+v", resp)
 	})
@@ -112,9 +109,7 @@ func TestMessages(t *testing.T) {
 				"testing",
 			),
 		})
-		if err != nil {
-			t.Fatalf("CreateMessages error: %v", err)
-		}
+		is.NoError(err)
 
 		t.Logf("CreateMessages resp: %+v", resp)
 	})
@@ -122,57 +117,40 @@ func TestMessages(t *testing.T) {
 }
 
 func TestNewUserTextMessage(t *testing.T) {
+	is := require.New(t)
 	m := anthropic.NewUserTextMessage("What is your name?")
-	if m.Role != anthropic.RoleUser {
-		t.Fatalf("Role mismatch. got %s, want %s", m.Role, anthropic.RoleUser)
-	}
 
-	if m.Content[0].Type != anthropic.MessagesContentTypeText {
-		t.Fatalf("Content type mismatch. got %s, want %s", m.Content[0].Type, anthropic.MessagesContentTypeText)
-	}
-
-	if *m.Content[0].Text != "What is your name?" {
-		t.Fatalf("Content text mismatch. got %s, want %s", *m.Content[0].Text, "What is your name?")
-	}
+	is.Equal(anthropic.RoleUser, m.Role)
+	is.Equal(anthropic.MessagesContentTypeText, m.Content[0].Type)
+	is.Equal("What is your name?", *m.Content[0].Text)
 }
 
 func TestNewAssistantTextMessage(t *testing.T) {
+	is := require.New(t)
 	m := anthropic.NewAssistantTextMessage("My name is Claude.")
-	if m.Role != anthropic.RoleAssistant {
-		t.Fatalf("Role mismatch. got %s, want %s", m.Role, anthropic.RoleAssistant)
-	}
 
-	if m.Content[0].Type != anthropic.MessagesContentTypeText {
-		t.Fatalf("Content type mismatch. got %s, want %s", m.Content[0].Type, anthropic.MessagesContentTypeText)
-	}
-
-	if *m.Content[0].Text != "My name is Claude." {
-		t.Fatalf("Content text mismatch. got %s, want %s", *m.Content[0].Text, "My name is Claude.")
-	}
+	is.Equal(anthropic.RoleAssistant, m.Role)
+	is.Equal(anthropic.MessagesContentTypeText, m.Content[0].Type)
+	is.Equal("My name is Claude.", *m.Content[0].Text)
 }
 
 func TestGetFirstContent(t *testing.T) {
+	is := require.New(t)
+
 	t.Run("returns empty content", func(t *testing.T) {
 		m := anthropic.Message{}
 		c := m.GetFirstContent()
-		if c.Type != "" {
-			t.Fatalf("Content type mismatch. got %s, want %s", c.Type, "")
-		}
-		if c.Text != nil {
-			t.Fatalf("Content text mismatch. got %s, want %s", *c.Text, "")
-		}
+
+		is.Equal(anthropic.MessagesContentType(""), c.Type)
+		is.Nil(c.Text, "Text should be nil")
 	})
 
 	t.Run("returns single content", func(t *testing.T) {
 		m := anthropic.NewAssistantTextMessage("My name is Claude.")
 		c := m.GetFirstContent()
-		if c.Type != anthropic.MessagesContentTypeText {
-			t.Fatalf("Content type mismatch. got %s, want %s", c.Type, anthropic.MessagesContentTypeText)
-		}
 
-		if *c.Text != "My name is Claude." {
-			t.Fatalf("Content text mismatch. got %s, want %s", *c.Text, "My name is Claude.")
-		}
+		is.Equal(anthropic.MessagesContentTypeText, c.Type)
+		is.Equal("My name is Claude.", *c.Text)
 	})
 
 	t.Run("returns first content when multiple content present", func(t *testing.T) {
@@ -184,22 +162,19 @@ func TestGetFirstContent(t *testing.T) {
 			},
 		}
 		c := m.GetFirstContent()
-		if c.Type != anthropic.MessagesContentTypeText {
-			t.Fatalf("Content type mismatch. got %s, want %s", c.Type, anthropic.MessagesContentTypeText)
-		}
 
-		if *c.Text != "My name is Claude." {
-			t.Fatalf("Content text mismatch. got %s, want %s", *c.Text, "My name is Claude.")
-		}
+		is.Equal(anthropic.MessagesContentTypeText, c.Type)
+		is.Equal("My name is Claude.", *c.Text)
 	})
 }
 
 func TestGetFirstContentText(t *testing.T) {
+	is := require.New(t)
+
 	t.Run("returns empty text", func(t *testing.T) {
 		m := anthropic.MessagesResponse{}
-		if m.GetFirstContentText() != "" {
-			t.Fatalf("Content text mismatch. got %s, want %s", m.GetFirstContentText(), "")
-		}
+
+		is.Equal("", m.GetFirstContentText())
 	})
 
 	t.Run("returns text", func(t *testing.T) {
@@ -208,49 +183,45 @@ func TestGetFirstContentText(t *testing.T) {
 				anthropic.NewTextMessageContent("test string"),
 			},
 		}
-		if m.GetFirstContentText() != "test string" {
-			t.Fatalf("Content text mismatch. got %s, want %s", m.GetFirstContentText(), "")
-		}
+
+		is.Equal("test string", m.GetFirstContentText())
 	})
 }
 
 func TestGetText(t *testing.T) {
+	is := require.New(t)
 	t.Run("returns empty text", func(t *testing.T) {
 		c := anthropic.MessageContent{}
-		if c.GetText() != "" {
-			t.Fatalf("Content text mismatch. got %s, want %s", c.GetText(), "")
-		}
+
+		is.Equal("", c.GetText())
 	})
 
 	t.Run("returns text", func(t *testing.T) {
 		c := anthropic.NewTextMessageContent("My name is Claude.")
-		if c.GetText() != "My name is Claude." {
-			t.Fatalf("Content text mismatch. got %s, want %s", c.GetText(), "My name is Claude.")
-		}
+
+		is.Equal("My name is Claude.", c.GetText())
 	})
 }
 
 func TestConcatText(t *testing.T) {
+	is := require.New(t)
 	t.Run("concatenates text when text content text present", func(t *testing.T) {
 		mc := anthropic.NewTextMessageContent("original")
 		mc.ConcatText(" added")
 
-		if mc.GetText() != "original added" {
-			t.Fatalf("Content text mismatch. got %s, want %s", mc.GetText(), "original added")
-		}
+		is.Equal("original added", mc.GetText())
 	})
 
 	t.Run("concatenates text when text content text not present", func(t *testing.T) {
 		mc := anthropic.MessageContent{}
 		mc.ConcatText("added")
 
-		if mc.GetText() != "added" {
-			t.Fatalf("Content text mismatch. got %s, want %s", mc.GetText(), "added")
-		}
+		is.Equal("added", mc.GetText())
 	})
 }
 
 func TestMessagesTokenError(t *testing.T) {
+	is := require.New(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -270,9 +241,9 @@ func TestMessagesTokenError(t *testing.T) {
 		},
 		MaxTokens: 1000,
 	})
-	if err == nil {
-		t.Fatal("should error")
-	}
+
+	is.Error(err, "should be an invalid token error")
+	is.Contains(err.Error(), "401")
 
 	var e *anthropic.RequestError
 	if !errors.As(err, &e) {
@@ -283,6 +254,7 @@ func TestMessagesTokenError(t *testing.T) {
 }
 
 func TestMessagesVision(t *testing.T) {
+	is := require.New(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -299,13 +271,10 @@ func TestMessagesVision(t *testing.T) {
 	imagePath := "internal/test/sources/ant.jpg"
 	imageMediaType := "image/jpeg"
 	imageFile, err := sources.Open(imagePath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(err)
+
 	imageData, err := io.ReadAll(imageFile)
-	if err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(err)
 
 	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
 		Model: anthropic.ModelClaude3Opus20240229,
@@ -325,13 +294,13 @@ func TestMessagesVision(t *testing.T) {
 		},
 		MaxTokens: 1000,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(err)
+
 	t.Logf("CreateMessages resp: %+v", resp)
 }
 
 func TestMessagesToolUse(t *testing.T) {
+	is := require.New(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -375,9 +344,7 @@ func TestMessagesToolUse(t *testing.T) {
 	}
 
 	resp, err := client.CreateMessages(context.Background(), request)
-	if err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(err)
 
 	request.Messages = append(request.Messages, anthropic.Message{
 		Role:    anthropic.RoleAssistant,
@@ -395,16 +362,12 @@ func TestMessagesToolUse(t *testing.T) {
 		}
 	}
 
-	if toolUse == nil {
-		t.Fatal("tool use not found")
-	}
+	is.NotNil(toolUse, "Tool use not found")
 
 	request.Messages = append(request.Messages, anthropic.NewToolResultsMessage(toolUse.ID, "65 degrees", false))
 
 	resp, err = client.CreateMessages(context.Background(), request)
-	if err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(err)
 
 	t.Logf("CreateMessages resp: %+v", resp)
 
@@ -417,12 +380,11 @@ func TestMessagesToolUse(t *testing.T) {
 			}
 		}
 	}
-	if !hasDegrees {
-		t.Fatalf("Expected response to contain '65 degrees', got: %+v", resp.Content)
-	}
+	is.True(hasDegrees, "Expected response to contain '65 degrees'")
 }
 
 func TestMessagesRateLimitHeaders(t *testing.T) {
+	is := require.New(t)
 	expectedSuccess := map[string]any{
 		"anthropic-ratelimit-requests-limit":     100,
 		"anthropic-ratelimit-requests-remaining": 99,
@@ -484,46 +446,33 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 				},
 				MaxTokens: 1000,
 			})
-			if err != nil {
-				t.Fatalf("CreateMessages error: %v", err)
-			}
+			is.NoError(err)
 
 			rlHeaders, err := resp.GetRateLimitHeaders()
-			if err != nil {
-				t.Fatalf("GetRateLimitHeaders error: %v", err)
-			}
+			is.NoError(err)
 
 			bs, err := json.Marshal(rlHeaders)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 
 			bs2, err := json.Marshal(c.expected)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 
-			if string(bs) != string(bs2) {
-				t.Fatalf("rate limit headers mismatch. got %s, want %s", string(bs), string(bs2))
-			}
+			is.Equal(string(bs2), string(bs), "rate limit headers mismatch")
 		})
 	}
 
 	t.Run("returns error for missing rate limit headers", func(t *testing.T) {
 		invalidHeaders := map[string]string{}
 		resp, err := getRespWithHeaders(invalidHeaders)
-		if err != nil {
-			t.Fatalf("CreateMessages error: %v", err)
-		}
+		is.NoError(err)
 
 		_, err = resp.GetRateLimitHeaders()
-		if err == nil {
-			t.Fatal("expected error, got nil")
-		}
+		is.Error(err)
 	})
 }
 
 func TestMessagesWithCaching(t *testing.T) {
+	is := require.New(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -559,9 +508,7 @@ func TestMessagesWithCaching(t *testing.T) {
 			},
 			MaxTokens: 1000,
 		})
-		if err != nil {
-			t.Fatalf("CreateMessages error: %v", err)
-		}
+		is.NoError(err)
 
 		t.Logf("CreateMessages resp: %+v", resp)
 	})
@@ -595,9 +542,7 @@ func TestMessagesWithCaching(t *testing.T) {
 			},
 			MaxTokens: 1000,
 		})
-		if err != nil {
-			t.Fatalf("CreateMessages error: %v", err)
-		}
+		is.NoError(err)
 
 		t.Logf("CreateMessages resp: %+v", resp)
 	})
@@ -605,6 +550,7 @@ func TestMessagesWithCaching(t *testing.T) {
 }
 
 func TestSetCacheControl(t *testing.T) {
+	is := require.New(t)
 	mc := anthropic.MessageContent{
 		Type: anthropic.MessagesContentTypeText,
 		Text: toPtr("hello"),
@@ -612,17 +558,14 @@ func TestSetCacheControl(t *testing.T) {
 
 	t.Run("sets cache control", func(t *testing.T) {
 		mc.SetCacheControl(anthropic.CacheControlTypeEphemeral)
-		if mc.CacheControl == nil {
-			t.Fatal("expected cache control to be set")
-		}
 
-		if mc.CacheControl.Type != anthropic.CacheControlTypeEphemeral {
-			t.Fatalf("expected cache control type to be %s, got %s", anthropic.CacheControlTypeEphemeral, mc.CacheControl.Type)
-		}
+		is.NotNil(mc.CacheControl, "expected cache control to be set")
+		is.Equal(anthropic.CacheControlTypeEphemeral, mc.CacheControl.Type)
 	})
 }
 
 func TestMessagesRequest_MarshalJSON(t *testing.T) {
+	is := require.New(t)
 	t.Run("marshals MessagesRequest with system", func(t *testing.T) {
 		req := anthropic.MessagesRequest{
 			Model: anthropic.ModelClaude3Haiku20240307,
@@ -634,14 +577,10 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 		}
 
 		bs, err := json.Marshal(req)
-		if err != nil {
-			t.Fatal(err)
-		}
+		is.NoError(err)
 
 		expected := `{"system":"test","model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
-		if string(bs) != expected {
-			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
-		}
+		is.Equal(expected, string(bs), "marshalled MessagesRequest mismatch")
 	})
 
 	t.Run("marshals MessagesRequest with multi system", func(t *testing.T) {
@@ -660,14 +599,10 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 		}
 
 		bs, err := json.Marshal(req)
-		if err != nil {
-			t.Fatal(err)
-		}
+		is.NoError(err)
 
 		expected := `{"system":[{"type":"text","text":"test"}],"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
-		if string(bs) != expected {
-			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
-		}
+		is.Equal(expected, string(bs), "marshalled MessagesRequest mismatch")
 	})
 
 	t.Run("marshals MessagesRequest with no system", func(t *testing.T) {
@@ -680,39 +615,24 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 		}
 
 		bs, err := json.Marshal(req)
-		if err != nil {
-			t.Fatal(err)
-		}
+		is.NoError(err)
 
 		expected := `{"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
-		if string(bs) != expected {
-			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
-		}
+		is.Equal(expected, string(bs), "marshalled MessagesRequest mismatch")
 	})
 }
 
 func TestUsageHeaders(t *testing.T) {
+	is := require.New(t)
+
 	resp, err := getRespWithHeaders(rateLimitHeaders)
-	if err != nil {
-		t.Fatalf("CreateMessages error: %v", err)
-	}
+	is.NoError(err)
 
 	usage := resp.Usage
-	if usage.InputTokens != 10 {
-		t.Fatalf("InputTokens mismatch. got %d, want 10", usage.InputTokens)
-	}
-
-	if usage.OutputTokens != 10 {
-		t.Fatalf("OutputTokens mismatch. got %d, want 10", usage.OutputTokens)
-	}
-
-	if usage.CacheCreationInputTokens != 0 {
-		t.Fatalf("CacheCreationInputTokens mismatch. got %d, want 0", usage.CacheCreationInputTokens)
-	}
-
-	if usage.CacheReadInputTokens != 0 {
-		t.Fatalf("CacheReadInputTokens mismatch. got %d, want 0", usage.CacheReadInputTokens)
-	}
+	is.Equal(10, usage.InputTokens)
+	is.Equal(10, usage.OutputTokens)
+	is.Equal(0, usage.CacheCreationInputTokens)
+	is.Equal(0, usage.CacheReadInputTokens)
 }
 
 func getRespWithHeaders(headers map[string]string) (anthropic.MessagesResponse, error) {
@@ -821,6 +741,6 @@ func getMessagesRequest(r *http.Request) (req anthropic.MessagesRequest, err err
 	return
 }
 
-func toPtr(s string) *string {
+func toPtr[T any](s T) *T {
 	return &s
 }
