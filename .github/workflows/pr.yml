@@ -10,14 +10,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
         go-version-file: go.mod
+
     - name: Run tests
       run: go test -race -covermode=atomic -coverprofile=coverage.out -v .
+
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4.5.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: liushuangls/go-anthropic
+
+    - name: Run tests
+      run: go test -race -covermode=atomic -coverprofile=coverage.out -v .
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: liushuangls/go-anthropic
+  
+    - name: Golines
+      run: |
+        go install github.com/segmentio/golines@latest
+        change=$(golines --dry-run .)
+        if [ -n "$change" ]; then
+          echo "::error:: golines needs to be run, please run:"
+          echo "::error:: go install github.com/segmentio/golines@latest"
+          echo "::error:: golines -w ."
+          echo "$change"
+          exit 1
+        fi
