@@ -79,9 +79,17 @@ func (c *Client) fullURL(suffix string) string {
 
 type requestSetter func(req *http.Request)
 
-func withBetaVersion(version BetaVersion) requestSetter {
+func withBetaVersion(betaVersion ...BetaVersion) requestSetter {
+	version := ""
+	for i, v := range betaVersion {
+		version += string(v)
+		if i < len(betaVersion)-1 {
+			version += ","
+		}
+	}
+
 	return func(req *http.Request) {
-		req.Header.Set("anthropic-beta", string(version))
+		req.Header.Set("anthropic-beta", version)
 	}
 }
 

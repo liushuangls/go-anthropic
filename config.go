@@ -81,8 +81,16 @@ func WithEmptyMessagesLimit(limit uint) ClientOption {
 	}
 }
 
-func WithBetaVersion(betaVersion BetaVersion) ClientOption {
+func WithBetaVersion(betaVersion ...BetaVersion) ClientOption {
+	version := ""
+	for i, v := range betaVersion {
+		version += string(v)
+		if i < len(betaVersion)-1 {
+			version += ","
+		}
+	}
+
 	return func(c *ClientConfig) {
-		c.BetaVersion = betaVersion
+		c.BetaVersion = BetaVersion(version)
 	}
 }
