@@ -66,8 +66,11 @@ func TestWithBetaVersion(t *testing.T) {
 		c := anthropic.ClientConfig{}
 		opt(&c)
 
-		if c.BetaVersion != fakeBetaVersion {
+		if c.BetaVersion[0] != fakeBetaVersion {
 			t.Errorf("unexpected BetaVersion: %s", c.BetaVersion)
+		}
+		if len(c.BetaVersion) != 1 {
+			t.Errorf("unexpected BetaVersion length: %d", len(c.BetaVersion))
 		}
 	})
 
@@ -76,8 +79,8 @@ func TestWithBetaVersion(t *testing.T) {
 		c := anthropic.ClientConfig{}
 		opt(&c)
 
-		if c.BetaVersion != "foo,bar" {
-			t.Errorf("unexpected BetaVersion: %s", c.BetaVersion)
+		if len(c.BetaVersion) != 2 {
+			t.Errorf("unexpected BetaVersion length: %d", len(c.BetaVersion))
 		}
 	})
 }

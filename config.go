@@ -31,7 +31,7 @@ type ClientConfig struct {
 
 	BaseURL     string
 	APIVersion  APIVersion
-	BetaVersion BetaVersion
+	BetaVersion []BetaVersion
 	HTTPClient  *http.Client
 
 	EmptyMessagesLimit uint
@@ -82,15 +82,7 @@ func WithEmptyMessagesLimit(limit uint) ClientOption {
 }
 
 func WithBetaVersion(betaVersion ...BetaVersion) ClientOption {
-	version := ""
-	for i, v := range betaVersion {
-		version += string(v)
-		if i < len(betaVersion)-1 {
-			version += ","
-		}
-	}
-
 	return func(c *ClientConfig) {
-		c.BetaVersion = BetaVersion(version)
+		c.BetaVersion = betaVersion
 	}
 }

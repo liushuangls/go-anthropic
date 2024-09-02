@@ -87,7 +87,7 @@ func (c *Client) CreateMessagesStream(ctx context.Context, request MessagesStrea
 
 	var setters []requestSetter
 	if len(c.config.BetaVersion) > 0 {
-		setters = append(setters, withBetaVersion(c.config.BetaVersion))
+		setters = append(setters, withBetaVersion(c.config.BetaVersion...))
 	}
 
 	urlSuffix := "/messages"

@@ -317,7 +317,7 @@ type MessagesUsage struct {
 	// The number of tokens written to the cache when creating a new entry.
 	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
 	// The number of tokens retrieved from the cache for associated request.
-	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`
+	CacheReadInputTokens int `json:"cache_read_input_tokens,omitempty"`
 }
 
 type ToolDefinition struct {
@@ -342,7 +342,7 @@ func (c *Client) CreateMessages(ctx context.Context, request MessagesRequest) (r
 
 	var setters []requestSetter
 	if len(c.config.BetaVersion) > 0 {
-		setters = append(setters, withBetaVersion(c.config.BetaVersion))
+		setters = append(setters, withBetaVersion(c.config.BetaVersion...))
 	}
 
 	urlSuffix := "/messages"
