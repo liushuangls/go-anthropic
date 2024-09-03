@@ -104,6 +104,7 @@ func TestMessagesStreamError(t *testing.T) {
 }
 
 func TestCreateMessagesStream(t *testing.T) {
+	is := require.New(t)
 	t.Run("Does not error for empty unknown messages below limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
