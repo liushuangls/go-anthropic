@@ -9,16 +9,20 @@ const (
 	defaultEmptyMessagesLimit uint = 300
 )
 
+type APIVersion string
+
 const (
-	APIVersion20230601 = "2023-06-01"
+	APIVersion20230601 APIVersion = "2023-06-01"
 )
 
-const (
-	BetaTools20240404         = "tools-2024-04-04"
-	BetaTools20240516         = "tools-2024-05-16"
-	BetaPromptCaching20240731 = "prompt-caching-2024-07-31"
+type BetaVersion string
 
-	BetaMaxTokens35Sonnet20240715 = "max-tokens-3-5-sonnet-2024-07-15"
+const (
+	BetaTools20240404         BetaVersion = "tools-2024-04-04"
+	BetaTools20240516         BetaVersion = "tools-2024-05-16"
+	BetaPromptCaching20240731 BetaVersion = "prompt-caching-2024-07-31"
+
+	BetaMaxTokens35Sonnet20240715 BetaVersion = "max-tokens-3-5-sonnet-2024-07-15"
 )
 
 // ClientConfig is a configuration of a client.
@@ -26,8 +30,8 @@ type ClientConfig struct {
 	apiKey string
 
 	BaseURL     string
-	APIVersion  string
-	BetaVersion string
+	APIVersion  APIVersion
+	BetaVersion []BetaVersion
 	HTTPClient  *http.Client
 
 	EmptyMessagesLimit uint
@@ -59,7 +63,7 @@ func WithBaseURL(baseUrl string) ClientOption {
 	}
 }
 
-func WithAPIVersion(apiVersion string) ClientOption {
+func WithAPIVersion(apiVersion APIVersion) ClientOption {
 	return func(c *ClientConfig) {
 		c.APIVersion = apiVersion
 	}
@@ -77,7 +81,7 @@ func WithEmptyMessagesLimit(limit uint) ClientOption {
 	}
 }
 
-func WithBetaVersion(betaVersion string) ClientOption {
+func WithBetaVersion(betaVersion ...BetaVersion) ClientOption {
 	return func(c *ClientConfig) {
 		c.BetaVersion = betaVersion
 	}

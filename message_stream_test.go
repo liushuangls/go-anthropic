@@ -111,30 +111,6 @@ func TestMessagesStreamError(t *testing.T) {
 }
 
 func TestCreateMessagesStream(t *testing.T) {
-	t.Run("Accepts generic beta version", func(t *testing.T) {
-		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
-
-		ts := server.AnthropicTestServer()
-		ts.Start()
-		defer ts.Close()
-		baseUrl := ts.URL + "/v1"
-
-		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl), anthropic.WithBetaVersion("beta-version"))
-		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
-			MessagesRequest: anthropic.MessagesRequest{
-				Model: anthropic.ModelClaudeInstant1Dot2,
-				Messages: []anthropic.Message{
-					anthropic.NewUserTextMessage("What is your name?"),
-				},
-				MaxTokens: 1000,
-			},
-		})
-		if err != nil {
-			t.Fatalf("CreateMessagesStream error: %s", err)
-		}
-	})
-
 	t.Run("Does not error for empty unknown messages below limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
