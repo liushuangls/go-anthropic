@@ -5,10 +5,13 @@ import (
 	"testing"
 
 	"github.com/liushuangls/go-anthropic/v2"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIntegrationMessages(t *testing.T) {
 	testAPIKey(t)
+	is := require.New(t)
+
 	client := anthropic.NewClient(APIKey)
 	ctx := context.Background()
 
@@ -28,16 +31,14 @@ func TestIntegrationMessages(t *testing.T) {
 		newClient := anthropic.NewClient(APIKey, betaOpts)
 
 		resp, err := newClient.CreateMessages(ctx, request)
-		if err != nil {
-			t.Fatalf("CreateMessages error: %s", err)
-		}
+		is.NoError(err)
+
 		t.Logf("CreateMessages resp: %+v", resp)
 
 		t.Run("RateLimitHeaders are present", func(t *testing.T) {
 			rateLimHeader, err := resp.GetRateLimitHeaders()
-			if err != nil {
-				t.Fatalf("GetRateLimitHeaders error: %s", err)
-			}
+			is.NoError(err)
+
 			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
 		})
 	})
@@ -47,16 +48,14 @@ func TestIntegrationMessages(t *testing.T) {
 			MessagesRequest: request,
 		}
 		resp, err := client.CreateMessagesStream(ctx, streamRequest)
-		if err != nil {
-			t.Fatalf("CreateMessagesStream error: %s", err)
-		}
+		is.NoError(err)
+
 		t.Logf("CreateMessagesStream resp: %+v", resp)
 
 		t.Run("RateLimitHeaders are present", func(t *testing.T) {
 			rateLimHeader, err := resp.GetRateLimitHeaders()
-			if err != nil {
-				t.Fatalf("GetRateLimitHeaders error: %s", err)
-			}
+			is.NoError(err)
+
 			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
 		})
 	})
