@@ -34,12 +34,12 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: liushuangls/go-anthropic
   
-    - name: Golines
+    - name: Golines format check
       run: |
         go install github.com/segmentio/golines@latest
         change=$(golines --dry-run .)
         if [ -n "$change" ]; then
-          echo "::error:: golines needs to be run, please run:"
+          echo "::error:: golines needs to be run, and changes committed. Please run:"
           echo "::error:: go install github.com/segmentio/golines@latest"
           echo "::error:: golines -w ."
           echo "$change"
