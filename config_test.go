@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/liushuangls/go-anthropic/v2"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
 )
 
 func TestWithBaseURL(t *testing.T) {
@@ -20,6 +21,7 @@ func TestWithBaseURL(t *testing.T) {
 }
 
 func TestWithAPIVersion(t *testing.T) {
+	is := test.NewRequire(t)
 	t.Run("single generic version", func(t *testing.T) {
 		fakeAPIVersion := anthropic.APIVersion("fake-version")
 		opt := anthropic.WithAPIVersion(fakeAPIVersion)
@@ -27,13 +29,12 @@ func TestWithAPIVersion(t *testing.T) {
 		c := anthropic.ClientConfig{}
 		opt(&c)
 
-		if c.APIVersion != fakeAPIVersion {
-			t.Errorf("unexpected APIVersion: %s", c.APIVersion)
-		}
+		is.Equal(fakeAPIVersion, c.APIVersion)
 	})
 }
 
 func TestWithHTTPClient(t *testing.T) {
+	is := test.NewRequire(t)
 	fakeHTTPClient := http.Client{}
 	fakeHTTPClient.Timeout = 1234
 
@@ -42,36 +43,30 @@ func TestWithHTTPClient(t *testing.T) {
 	c := anthropic.ClientConfig{}
 	opt(&c)
 
-	if c.HTTPClient != &fakeHTTPClient {
-		t.Errorf("unexpected HTTPClient: %v", c.HTTPClient)
-	}
+	is.Equal(&fakeHTTPClient, c.HTTPClient)
 }
 
 func TestWithEmptyMessagesLimit(t *testing.T) {
+	is := test.NewRequire(t)
 	fakeLimit := uint(1234)
 	opt := anthropic.WithEmptyMessagesLimit(fakeLimit)
 
 	c := anthropic.ClientConfig{}
 	opt(&c)
 
-	if c.EmptyMessagesLimit != fakeLimit {
-		t.Errorf("unexpected EmptyMessagesLimit: %d", c.EmptyMessagesLimit)
-	}
+	is.Equal(fakeLimit, c.EmptyMessagesLimit)
 }
 
 func TestWithBetaVersion(t *testing.T) {
+	is := test.NewRequire(t)
 	t.Run("single generic version", func(t *testing.T) {
 		fakeBetaVersion := anthropic.BetaVersion("fake-version")
 		opt := anthropic.WithBetaVersion(fakeBetaVersion)
 		c := anthropic.ClientConfig{}
 		opt(&c)
 
-		if c.BetaVersion[0] != fakeBetaVersion {
-			t.Errorf("unexpected BetaVersion: %s", c.BetaVersion)
-		}
-		if len(c.BetaVersion) != 1 {
-			t.Errorf("unexpected BetaVersion length: %d", len(c.BetaVersion))
-		}
+		is.Equal(fakeBetaVersion, c.BetaVersion[0])
+		is.Equal(1, len(c.BetaVersion))
 	})
 
 	t.Run("multiple versions", func(t *testing.T) {
@@ -79,8 +74,8 @@ func TestWithBetaVersion(t *testing.T) {
 		c := anthropic.ClientConfig{}
 		opt(&c)
 
-		if len(c.BetaVersion) != 2 {
-			t.Errorf("unexpected BetaVersion length: %d", len(c.BetaVersion))
-		}
+		is.Equal(2, len(c.BetaVersion))
+		is.Equal(anthropic.BetaVersion("foo"), c.BetaVersion[0])
+		is.Equal(anthropic.BetaVersion("bar"), c.BetaVersion[1])
 	})
 }

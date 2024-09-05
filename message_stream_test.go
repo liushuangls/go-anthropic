@@ -2,7 +2,6 @@ package anthropic_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -19,6 +18,7 @@ var (
 )
 
 func TestMessagesStream(t *testing.T) {
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStream)
 
@@ -42,7 +42,6 @@ func TestMessagesStream(t *testing.T) {
 		},
 		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
 			received += data.Delta.GetText()
-			//t.Logf("CreateMessagesStream delta resp: %+v", data)
 		},
 		OnError:             func(response anthropic.ErrorResponse) {},
 		OnPing:              func(data anthropic.MessagesEventPingData) {},
@@ -52,28 +51,21 @@ func TestMessagesStream(t *testing.T) {
 		OnMessageDelta:      func(data anthropic.MessagesEventMessageDeltaData) {},
 		OnMessageStop:       func(data anthropic.MessagesEventMessageStopData) {},
 	})
-	if err != nil {
-		t.Fatalf("CreateMessagesStream error: %s", err)
-	}
+	is.NoError(err)
 
 	expectedContent := strings.Join(testMessagesStreamContent, "")
-	if received != expectedContent {
-		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, received)
-	}
-	if resp.GetFirstContentText() != expectedContent {
-		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, resp.GetFirstContentText())
-	}
+	is.Equal(expectedContent, received)
+	is.Equal(expectedContent, resp.GetFirstContentText())
 
 	headers, err := resp.GetRateLimitHeaders()
-	if err != nil {
-		t.Fatalf("CreateMessagesStream GetRateLimitHeaders error: %s", err)
-	}
+	is.NoError(err)
 	t.Logf("CreateMessagesStream rate limit headers: %+v", headers)
 
 	t.Logf("CreateMessagesStream resp: %+v", resp)
 }
 
 func TestMessagesStreamError(t *testing.T) {
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStream)
 
@@ -86,6 +78,7 @@ func TestMessagesStreamError(t *testing.T) {
 		test.GetTestToken(),
 		anthropic.WithBaseURL(baseUrl),
 	)
+
 	param := anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
 			Model: anthropic.ModelClaudeInstant1Dot2,
@@ -102,15 +95,15 @@ func TestMessagesStreamError(t *testing.T) {
 	param.SetTemperature(2)
 	param.SetTopP(2)
 	param.SetTopK(1)
+
 	_, err := client.CreateMessagesStream(context.Background(), param)
-	if err == nil {
-		t.Fatalf("CreateMessagesStream expect error, but not")
-	}
+	is.Error(err)
 
 	t.Logf("CreateMessagesStream error: %s", err)
 }
 
 func TestCreateMessagesStream(t *testing.T) {
+	is := test.NewRequire(t)
 	t.Run("Does not error for empty unknown messages below limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
@@ -135,9 +128,7 @@ func TestCreateMessagesStream(t *testing.T) {
 				MaxTokens: 1000,
 			},
 		})
-		if err != nil {
-			t.Fatalf("CreateMessagesStream error: %s", err)
-		}
+		is.NoError(err)
 	})
 
 	t.Run("Error for empty unknown messages above limit", func(t *testing.T) {
@@ -164,17 +155,14 @@ func TestCreateMessagesStream(t *testing.T) {
 				MaxTokens: 1000,
 			},
 		})
-		if err == nil {
-			t.Fatalf("Expected error for empty messages above limit, got nil")
-		}
+		is.Error(err)
 
-		if !errors.Is(err, anthropic.ErrTooManyEmptyStreamMessages) {
-			t.Fatalf("Expected error to be ErrTooManyEmptyStreamMessages, got: %v", err)
-		}
+		is.ErrorIs(anthropic.ErrTooManyEmptyStreamMessages, err)
 	})
 }
 
 func TestMessagesStreamToolUse(t *testing.T) {
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
 
@@ -232,9 +220,7 @@ func TestMessagesStreamToolUse(t *testing.T) {
 	}
 
 	resp, err := cli.CreateMessagesStream(context.Background(), request)
-	if err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(err)
 
 	request.Messages = append(request.Messages, anthropic.Message{
 		Role:    anthropic.RoleAssistant,
@@ -249,16 +235,12 @@ func TestMessagesStreamToolUse(t *testing.T) {
 		}
 	}
 
-	if toolUse == nil {
-		t.Fatalf("tool use not found")
-	}
+	is.NotNil(toolUse, "expected tool use message in response")
 
 	request.Messages = append(request.Messages, anthropic.NewToolResultsMessage(toolUse.ID, "65 degrees", false))
 
 	resp, err = cli.CreateMessagesStream(context.Background(), request)
-	if err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(err)
 
 	var hasDegrees bool
 	for _, m := range resp.Content {
@@ -269,9 +251,7 @@ func TestMessagesStreamToolUse(t *testing.T) {
 			}
 		}
 	}
-	if !hasDegrees {
-		t.Fatalf("Expected response to contain '65 degrees', got: %+v", resp.Content)
-	}
+	is.True(hasDegrees, "expected response to contain '65 degrees'")
 }
 
 func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {

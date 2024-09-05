@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/liushuangls/go-anthropic/v2"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
 )
 
 func TestIntegrationComplete(t *testing.T) {
 	testAPIKey(t)
+	is := test.NewRequire(t)
 
 	t.Run("CreateComplete on real API", func(t *testing.T) {
 		client := anthropic.NewClient(APIKey)
@@ -21,9 +23,8 @@ func TestIntegrationComplete(t *testing.T) {
 		}
 
 		resp, err := client.CreateComplete(ctx, request)
-		if err != nil {
-			t.Fatalf("CreateComplete error: %s", err)
-		}
+		is.NoError(err)
+
 		t.Logf("CreateComplete resp: %+v", resp)
 
 		// RateLimitHeaders are not present on the Completions endpoint

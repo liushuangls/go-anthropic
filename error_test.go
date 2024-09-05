@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	"github.com/liushuangls/go-anthropic/v2"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
 )
 
 func TestIsXError(t *testing.T) {
+	is := test.NewRequire(t)
 	countBool := func(bools []bool) int {
 		count := 0
 		for _, b := range bools {
@@ -53,13 +55,9 @@ func TestIsXError(t *testing.T) {
 
 		// Expect only one error type to be true for each error
 		numErrorType := countBool(isErrorType)
-		if numErrorType != 1 {
-			t.Errorf("Expected 1 error type to be true, got %d, for error %d", numErrorType, i)
-		}
+		is.Equal(1, numErrorType, "Expected 1 error type to be true, got %d, for error %T", numErrorType, i)
 
 		// Expect the error type to be true for the correct error
-		if !isErrorType[i] {
-			t.Errorf("Expected error type %T to be true, got false", e)
-		}
+		is.True(isErrorType[i], "Expected error type %T to be true, got false", e)
 	}
 }

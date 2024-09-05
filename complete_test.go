@@ -14,6 +14,7 @@ import (
 )
 
 func TestComplete(t *testing.T) {
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/complete", handleCompleteEndpoint)
 
@@ -30,9 +31,7 @@ func TestComplete(t *testing.T) {
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 			MaxTokensToSample: 1000,
 		})
-		if err != nil {
-			t.Fatalf("CreateComplete error: %v", err)
-		}
+		is.NoError(err)
 
 		t.Logf("Create Complete resp: %+v", resp)
 	})
@@ -44,13 +43,13 @@ func TestComplete(t *testing.T) {
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 			MaxTokensToSample: 1000,
 		})
-		if err == nil {
-			t.Fatalf("CreateComplete expected error, got nil")
-		}
+		is.Error(err)
+		is.Contains(err.Error(), "401")
 	})
 }
 
 func TestSetTemperature(t *testing.T) {
+	is := test.NewRequire(t)
 	cr := anthropic.CompleteRequest{
 		Model:             anthropic.ModelClaudeInstant1Dot2,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
@@ -58,14 +57,13 @@ func TestSetTemperature(t *testing.T) {
 	}
 
 	temp := float32(0.5)
-
 	cr.SetTemperature(temp)
-	if *cr.Temperature != temp {
-		t.Fatalf("SetTemperature failed: %v", cr.Temperature)
-	}
+
+	is.Equal(temp, *cr.Temperature)
 }
 
 func TestSetTopP(t *testing.T) {
+	is := test.NewRequire(t)
 	cr := anthropic.CompleteRequest{
 		Model:             anthropic.ModelClaudeInstant1Dot2,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
@@ -73,14 +71,13 @@ func TestSetTopP(t *testing.T) {
 	}
 
 	topP := float32(0.5)
-
 	cr.SetTopP(topP)
-	if *cr.TopP != topP {
-		t.Fatalf("SetTopP failed: %v", cr.TopP)
-	}
+
+	is.Equal(topP, *cr.TopP)
 }
 
 func TestSetTopK(t *testing.T) {
+	is := test.NewRequire(t)
 	cr := anthropic.CompleteRequest{
 		Model:             anthropic.ModelClaudeInstant1Dot2,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
@@ -88,11 +85,9 @@ func TestSetTopK(t *testing.T) {
 	}
 
 	topK := 5
-
 	cr.SetTopK(topK)
-	if *cr.TopK != topK {
-		t.Fatalf("SetTopK failed: %v", cr.TopK)
-	}
+
+	is.Equal(topK, *cr.TopK)
 }
 
 func handleCompleteEndpoint(w http.ResponseWriter, r *http.Request) {
