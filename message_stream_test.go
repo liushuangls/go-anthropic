@@ -10,7 +10,6 @@ import (
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/internal/test"
 	"github.com/liushuangls/go-anthropic/v2/jsonschema"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -19,7 +18,7 @@ var (
 )
 
 func TestMessagesStream(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStream)
 
@@ -66,7 +65,7 @@ func TestMessagesStream(t *testing.T) {
 }
 
 func TestMessagesStreamError(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStream)
 
@@ -104,7 +103,7 @@ func TestMessagesStreamError(t *testing.T) {
 }
 
 func TestCreateMessagesStream(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	t.Run("Does not error for empty unknown messages below limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
@@ -163,7 +162,7 @@ func TestCreateMessagesStream(t *testing.T) {
 }
 
 func TestMessagesStreamToolUse(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
 

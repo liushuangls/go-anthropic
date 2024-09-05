@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
 )
 
 func TestWithBetaVersion(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	t.Run("single beta version", func(t *testing.T) {
 		opt := withBetaVersion("fake-version")
 		request, err := http.NewRequest("GET", "http://example.com", nil)

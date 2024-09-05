@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/liushuangls/go-anthropic/v2"
-	"github.com/stretchr/testify/require"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
 )
 
 func TestIntegrationMessages(t *testing.T) {
 	testAPIKey(t)
-	is := require.New(t)
+	is := test.NewRequire(t)
 
 	client := anthropic.NewClient(APIKey)
 	ctx := context.Background()

@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/liushuangls/go-anthropic/v2"
-	"github.com/stretchr/testify/require"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
 )
 
 func TestIsXError(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	countBool := func(bools []bool) int {
 		count := 0
 		for _, b := range bools {

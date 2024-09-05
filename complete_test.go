@@ -11,11 +11,10 @@ import (
 
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/internal/test"
-	"github.com/stretchr/testify/require"
 )
 
 func TestComplete(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/complete", handleCompleteEndpoint)
 
@@ -50,7 +49,7 @@ func TestComplete(t *testing.T) {
 }
 
 func TestSetTemperature(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	cr := anthropic.CompleteRequest{
 		Model:             anthropic.ModelClaudeInstant1Dot2,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
@@ -64,7 +63,7 @@ func TestSetTemperature(t *testing.T) {
 }
 
 func TestSetTopP(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	cr := anthropic.CompleteRequest{
 		Model:             anthropic.ModelClaudeInstant1Dot2,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
@@ -78,7 +77,7 @@ func TestSetTopP(t *testing.T) {
 }
 
 func TestSetTopK(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	cr := anthropic.CompleteRequest{
 		Model:             anthropic.ModelClaudeInstant1Dot2,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",

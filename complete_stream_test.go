@@ -10,7 +10,6 @@ import (
 
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/internal/test"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -18,7 +17,7 @@ var (
 )
 
 func TestCompleteStream(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/complete", handlerCompleteStream)
 
@@ -54,7 +53,7 @@ func TestCompleteStream(t *testing.T) {
 }
 
 func TestCompleteStreamError(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/complete", handlerCompleteStream)
 

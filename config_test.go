@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/liushuangls/go-anthropic/v2"
-	"github.com/stretchr/testify/require"
+	"github.com/liushuangls/go-anthropic/v2/internal/test"
 )
 
 func TestWithBaseURL(t *testing.T) {
@@ -21,7 +21,7 @@ func TestWithBaseURL(t *testing.T) {
 }
 
 func TestWithAPIVersion(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	t.Run("single generic version", func(t *testing.T) {
 		fakeAPIVersion := anthropic.APIVersion("fake-version")
 		opt := anthropic.WithAPIVersion(fakeAPIVersion)
@@ -34,7 +34,7 @@ func TestWithAPIVersion(t *testing.T) {
 }
 
 func TestWithHTTPClient(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	fakeHTTPClient := http.Client{}
 	fakeHTTPClient.Timeout = 1234
 
@@ -47,7 +47,7 @@ func TestWithHTTPClient(t *testing.T) {
 }
 
 func TestWithEmptyMessagesLimit(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	fakeLimit := uint(1234)
 	opt := anthropic.WithEmptyMessagesLimit(fakeLimit)
 
@@ -58,7 +58,7 @@ func TestWithEmptyMessagesLimit(t *testing.T) {
 }
 
 func TestWithBetaVersion(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	t.Run("single generic version", func(t *testing.T) {
 		fakeBetaVersion := anthropic.BetaVersion("fake-version")
 		opt := anthropic.WithBetaVersion(fakeBetaVersion)

@@ -15,7 +15,6 @@ import (
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/internal/test"
 	"github.com/liushuangls/go-anthropic/v2/jsonschema"
-	"github.com/stretchr/testify/require"
 )
 
 //go:embed internal/test/sources/*
@@ -32,7 +31,7 @@ var rateLimitHeaders = map[string]string{
 }
 
 func TestMessages(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
@@ -117,7 +116,7 @@ func TestMessages(t *testing.T) {
 }
 
 func TestNewUserTextMessage(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	m := anthropic.NewUserTextMessage("What is your name?")
 
 	is.Equal(anthropic.RoleUser, m.Role)
@@ -126,7 +125,7 @@ func TestNewUserTextMessage(t *testing.T) {
 }
 
 func TestNewAssistantTextMessage(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	m := anthropic.NewAssistantTextMessage("My name is Claude.")
 
 	is.Equal(anthropic.RoleAssistant, m.Role)
@@ -135,7 +134,7 @@ func TestNewAssistantTextMessage(t *testing.T) {
 }
 
 func TestGetFirstContent(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 
 	t.Run("returns empty content", func(t *testing.T) {
 		m := anthropic.Message{}
@@ -169,7 +168,7 @@ func TestGetFirstContent(t *testing.T) {
 }
 
 func TestGetFirstContentText(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 
 	t.Run("returns empty text", func(t *testing.T) {
 		m := anthropic.MessagesResponse{}
@@ -189,7 +188,7 @@ func TestGetFirstContentText(t *testing.T) {
 }
 
 func TestGetText(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	t.Run("returns empty text", func(t *testing.T) {
 		c := anthropic.MessageContent{}
 
@@ -204,7 +203,7 @@ func TestGetText(t *testing.T) {
 }
 
 func TestConcatText(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	t.Run("concatenates text when text content text present", func(t *testing.T) {
 		mc := anthropic.NewTextMessageContent("original")
 		mc.ConcatText(" added")
@@ -221,7 +220,7 @@ func TestConcatText(t *testing.T) {
 }
 
 func TestMessagesTokenError(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -254,7 +253,7 @@ func TestMessagesTokenError(t *testing.T) {
 }
 
 func TestMessagesVision(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -300,7 +299,7 @@ func TestMessagesVision(t *testing.T) {
 }
 
 func TestMessagesToolUse(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -384,7 +383,7 @@ func TestMessagesToolUse(t *testing.T) {
 }
 
 func TestMessagesRateLimitHeaders(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	expectedSuccess := map[string]any{
 		"anthropic-ratelimit-requests-limit":     100,
 		"anthropic-ratelimit-requests-remaining": 99,
@@ -472,7 +471,7 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 }
 
 func TestMessagesWithCaching(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
 
@@ -550,7 +549,7 @@ func TestMessagesWithCaching(t *testing.T) {
 }
 
 func TestSetCacheControl(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	mc := anthropic.MessageContent{
 		Type: anthropic.MessagesContentTypeText,
 		Text: toPtr("hello"),
@@ -565,7 +564,7 @@ func TestSetCacheControl(t *testing.T) {
 }
 
 func TestMessagesRequest_MarshalJSON(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 	t.Run("marshals MessagesRequest with system", func(t *testing.T) {
 		req := anthropic.MessagesRequest{
 			Model: anthropic.ModelClaude3Haiku20240307,
@@ -623,7 +622,7 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 }
 
 func TestUsageHeaders(t *testing.T) {
-	is := require.New(t)
+	is := test.NewRequire(t)
 
 	resp, err := getRespWithHeaders(rateLimitHeaders)
 	is.NoError(err)
