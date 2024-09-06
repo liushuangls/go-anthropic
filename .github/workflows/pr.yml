@@ -25,15 +25,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: liushuangls/go-anthropic
 
-    - name: Run tests
-      run: go test -race -covermode=atomic -coverprofile=coverage.out -v .
-
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4.0.1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: liushuangls/go-anthropic
-  
     - name: Golines format check
       run: |
         go install github.com/segmentio/golines@latest
