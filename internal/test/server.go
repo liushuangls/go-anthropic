@@ -28,20 +28,22 @@ func (ts *ServerTest) RegisterHandler(path string, handler Handler) {
 
 // AnthropicTestServer Creates a mocked Anthropic server which can pretend to handle requests during testing.
 func (ts *ServerTest) AnthropicTestServer() *httptest.Server {
-	return httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("received request at path %q\n", r.URL.Path)
+	return httptest.NewUnstartedServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("received request at path %q\n", r.URL.Path)
 
-		// check auth
-		if r.Header.Get("X-Api-Key") != GetTestToken() {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+			// check auth
+			if r.Header.Get("X-Api-Key") != GetTestToken() {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
 
-		handlerCall, ok := ts.handlers[r.URL.Path]
-		if !ok {
-			http.Error(w, "the resource path doesn't exist", http.StatusNotFound)
-			return
-		}
-		handlerCall(w, r)
-	}))
+			handlerCall, ok := ts.handlers[r.URL.Path]
+			if !ok {
+				http.Error(w, "the resource path doesn't exist", http.StatusNotFound)
+				return
+			}
+			handlerCall(w, r)
+		}),
+	)
 }

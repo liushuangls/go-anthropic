@@ -30,7 +30,10 @@ type CompleteStreamPingData struct {
 	Type string `json:"type"`
 }
 
-func (c *Client) CreateCompleteStream(ctx context.Context, request CompleteStreamRequest) (response CompleteResponse, err error) {
+func (c *Client) CreateCompleteStream(
+	ctx context.Context,
+	request CompleteStreamRequest,
+) (response CompleteResponse, err error) {
 	request.Stream = true
 
 	urlSuffix := "/complete"

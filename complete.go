@@ -41,7 +41,10 @@ type CompleteResponse struct {
 	Model      Model  `json:"model"`
 }
 
-func (c *Client) CreateComplete(ctx context.Context, request CompleteRequest) (response CompleteResponse, err error) {
+func (c *Client) CreateComplete(
+	ctx context.Context,
+	request CompleteRequest,
+) (response CompleteResponse, err error) {
 	request.Stream = false
 
 	urlSuffix := "/complete"

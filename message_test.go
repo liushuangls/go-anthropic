@@ -129,7 +129,11 @@ func TestNewUserTextMessage(t *testing.T) {
 	}
 
 	if m.Content[0].Type != anthropic.MessagesContentTypeText {
-		t.Fatalf("Content type mismatch. got %s, want %s", m.Content[0].Type, anthropic.MessagesContentTypeText)
+		t.Fatalf(
+			"Content type mismatch. got %s, want %s",
+			m.Content[0].Type,
+			anthropic.MessagesContentTypeText,
+		)
 	}
 
 	if *m.Content[0].Text != "What is your name?" {
@@ -144,7 +148,11 @@ func TestNewAssistantTextMessage(t *testing.T) {
 	}
 
 	if m.Content[0].Type != anthropic.MessagesContentTypeText {
-		t.Fatalf("Content type mismatch. got %s, want %s", m.Content[0].Type, anthropic.MessagesContentTypeText)
+		t.Fatalf(
+			"Content type mismatch. got %s, want %s",
+			m.Content[0].Type,
+			anthropic.MessagesContentTypeText,
+		)
 	}
 
 	if *m.Content[0].Text != "My name is Claude." {
@@ -168,7 +176,11 @@ func TestGetFirstContent(t *testing.T) {
 		m := anthropic.NewAssistantTextMessage("My name is Claude.")
 		c := m.GetFirstContent()
 		if c.Type != anthropic.MessagesContentTypeText {
-			t.Fatalf("Content type mismatch. got %s, want %s", c.Type, anthropic.MessagesContentTypeText)
+			t.Fatalf(
+				"Content type mismatch. got %s, want %s",
+				c.Type,
+				anthropic.MessagesContentTypeText,
+			)
 		}
 
 		if *c.Text != "My name is Claude." {
@@ -186,7 +198,11 @@ func TestGetFirstContent(t *testing.T) {
 		}
 		c := m.GetFirstContent()
 		if c.Type != anthropic.MessagesContentTypeText {
-			t.Fatalf("Content type mismatch. got %s, want %s", c.Type, anthropic.MessagesContentTypeText)
+			t.Fatalf(
+				"Content type mismatch. got %s, want %s",
+				c.Type,
+				anthropic.MessagesContentTypeText,
+			)
 		}
 
 		if *c.Text != "My name is Claude." {
@@ -312,7 +328,9 @@ func TestMessagesVision(t *testing.T) {
 			{
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
-					anthropic.NewImageMessageContent(anthropic.NewMessageContentImageSource("base64", imageMediaType, imageData)),
+					anthropic.NewImageMessageContent(
+						anthropic.NewMessageContentImageSource("base64", imageMediaType, imageData),
+					),
 					anthropic.NewImageMessageContent(anthropic.MessageContentImageSource{
 						Type:      "base64",
 						MediaType: imageMediaType,
@@ -398,7 +416,10 @@ func TestMessagesToolUse(t *testing.T) {
 		t.Fatal("tool use not found")
 	}
 
-	request.Messages = append(request.Messages, anthropic.NewToolResultsMessage(toolUse.ID, "65 degrees", false))
+	request.Messages = append(
+		request.Messages,
+		anthropic.NewToolResultsMessage(toolUse.ID, "65 degrees", false),
+	)
 
 	resp, err = client.CreateMessages(context.Background(), request)
 	if err != nil {
@@ -616,7 +637,11 @@ func TestSetCacheControl(t *testing.T) {
 		}
 
 		if mc.CacheControl.Type != anthropic.CacheControlTypeEphemeral {
-			t.Fatalf("expected cache control type to be %s, got %s", anthropic.CacheControlTypeEphemeral, mc.CacheControl.Type)
+			t.Fatalf(
+				"expected cache control type to be %s, got %s",
+				anthropic.CacheControlTypeEphemeral,
+				mc.CacheControl.Type,
+			)
 		}
 	})
 }
@@ -639,7 +664,11 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 
 		expected := `{"system":"test","model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
 		if string(bs) != expected {
-			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
+			t.Fatalf(
+				"marshalled MessagesRequest mismatch. \ngot %s, \nwant %s",
+				string(bs),
+				expected,
+			)
 		}
 	})
 
@@ -665,7 +694,11 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 
 		expected := `{"system":[{"type":"text","text":"test"}],"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
 		if string(bs) != expected {
-			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
+			t.Fatalf(
+				"marshalled MessagesRequest mismatch. \ngot %s, \nwant %s",
+				string(bs),
+				expected,
+			)
 		}
 	})
 
@@ -685,7 +718,11 @@ func TestMessagesRequest_MarshalJSON(t *testing.T) {
 
 		expected := `{"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"What is your name?"}]}],"max_tokens":1000}`
 		if string(bs) != expected {
-			t.Fatalf("marshalled MessagesRequest mismatch. \ngot %s, \nwant %s", string(bs), expected)
+			t.Fatalf(
+				"marshalled MessagesRequest mismatch. \ngot %s, \nwant %s",
+				string(bs),
+				expected,
+			)
 		}
 	})
 }
@@ -706,7 +743,10 @@ func TestUsageHeaders(t *testing.T) {
 	}
 
 	if usage.CacheCreationInputTokens != 0 {
-		t.Fatalf("CacheCreationInputTokens mismatch. got %d, want 0", usage.CacheCreationInputTokens)
+		t.Fatalf(
+			"CacheCreationInputTokens mismatch. got %d, want 0",
+			usage.CacheCreationInputTokens,
+		)
 	}
 
 	if usage.CacheReadInputTokens != 0 {
@@ -783,7 +823,9 @@ func handleMessagesEndpoint(headers map[string]string) func(http.ResponseWriter,
 		if len(messagesReq.Tools) > 0 {
 			if hasToolResult {
 				res.Content = []anthropic.MessageContent{
-					anthropic.NewTextMessageContent("The current weather in San Francisco is 65 degrees Fahrenheit. It's a nice, moderate temperature typical of the San Francisco Bay Area climate."),
+					anthropic.NewTextMessageContent(
+						"The current weather in San Francisco is 65 degrees Fahrenheit. It's a nice, moderate temperature typical of the San Francisco Bay Area climate.",
+					),
 				}
 			} else {
 				m := map[string]any{

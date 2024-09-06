@@ -58,10 +58,18 @@ func TestMessagesStream(t *testing.T) {
 
 	expectedContent := strings.Join(testMessagesStreamContent, "")
 	if received != expectedContent {
-		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, received)
+		t.Fatalf(
+			"CreateMessagesStream content not match expected: %s, got: %s",
+			expectedContent,
+			received,
+		)
 	}
 	if resp.GetFirstContentText() != expectedContent {
-		t.Fatalf("CreateMessagesStream content not match expected: %s, got: %s", expectedContent, resp.GetFirstContentText())
+		t.Fatalf(
+			"CreateMessagesStream content not match expected: %s, got: %s",
+			expectedContent,
+			resp.GetFirstContentText(),
+		)
 	}
 
 	headers, err := resp.GetRateLimitHeaders()
@@ -143,7 +151,10 @@ func TestCreateMessagesStream(t *testing.T) {
 	t.Run("Error for empty unknown messages above limit", func(t *testing.T) {
 		emptyMessagesLimit := 100
 		server := test.NewTestServer()
-		server.RegisterHandler("/v1/messages", handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "fake: {}"))
+		server.RegisterHandler(
+			"/v1/messages",
+			handlerMessagesStreamEmptyMessages(emptyMessagesLimit, "fake: {}"),
+		)
 
 		ts := server.AnthropicTestServer()
 		ts.Start()
@@ -253,7 +264,10 @@ func TestMessagesStreamToolUse(t *testing.T) {
 		t.Fatalf("tool use not found")
 	}
 
-	request.Messages = append(request.Messages, anthropic.NewToolResultsMessage(toolUse.ID, "65 degrees", false))
+	request.Messages = append(
+		request.Messages,
+		anthropic.NewToolResultsMessage(toolUse.ID, "65 degrees", false),
+	)
 
 	resp, err = cli.CreateMessagesStream(context.Background(), request)
 	if err != nil {
@@ -295,28 +309,51 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 
 	if request.Temperature != nil && *request.Temperature > 1 {
 		dataBytes = append(dataBytes, []byte("event: error\n")...)
-		dataBytes = append(dataBytes, []byte(`data: {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}`+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(
+				`data: {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}`+"\n\n",
+			)...)
 	}
 
 	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-instant-1.2","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-instant-1.2","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
+		)...)
 
 	dataBytes = append(dataBytes, []byte("event: content_block_start\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`+"\n\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`+"\n\n",
+		)...)
 
 	dataBytes = append(dataBytes, []byte("event: ping\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type": "ping"}`+"\n\n")...)
 
 	for _, t := range testMessagesStreamContent {
 		dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
-		dataBytes = append(dataBytes, []byte(fmt.Sprintf(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"%s"}}`, t)+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(
+				fmt.Sprintf(
+					`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"%s"}}`,
+					t,
+				)+"\n\n",
+			)...)
 	}
 
 	dataBytes = append(dataBytes, []byte("event: content_block_stop\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_stop","index":0}`+"\n\n")...)
 
 	dataBytes = append(dataBytes, []byte("event: message_delta\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":9}}`+"\n\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":9}}`+"\n\n",
+		)...)
 
 	dataBytes = append(dataBytes, []byte("event: message_stop\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`+"\n\n")...)
@@ -347,20 +384,38 @@ func handlerMessagesStreamToolUse(w http.ResponseWriter, r *http.Request) {
 	var dataBytes []byte
 
 	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
-	dataBytes = append(dataBytes, []byte(`data: {"type":"message_start","message":{"id":"123333","type":"message","role":"assistant","model":"claude-3-opus-20240229","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":844,"output_tokens":2}}}`+"\n\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_start","message":{"id":"123333","type":"message","role":"assistant","model":"claude-3-opus-20240229","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":844,"output_tokens":2}}}`+"\n\n",
+		)...)
 
 	if hasToolResult {
 		dataBytes = append(dataBytes, []byte("event: content_block_start\n")...)
-		dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(
+				`data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`+"\n\n",
+			)...)
 
 		dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
-		dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"The current weather in San Francisco is 65 degrees Fahrenheit. It's a nice, moderate temperature typical of the San Francisco Bay Area climate."}}`+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(
+				`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"The current weather in San Francisco is 65 degrees Fahrenheit. It's a nice, moderate temperature typical of the San Francisco Bay Area climate."}}`+"\n\n",
+			)...)
 
 		dataBytes = append(dataBytes, []byte("event: content_block_stop\n")...)
-		dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_stop","index":0}`+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(`data: {"type":"content_block_stop","index":0}`+"\n\n")...)
 
 		dataBytes = append(dataBytes, []byte("event: message_delta\n")...)
-		dataBytes = append(dataBytes, []byte(`data: {"type":"message_delta","delta":{"stop_reason":"end_return","stop_sequence":null},"usage":{"output_tokens":9}}`+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(
+				`data: {"type":"message_delta","delta":{"stop_reason":"end_return","stop_sequence":null},"usage":{"output_tokens":9}}`+"\n\n",
+			)...)
 	} else {
 		dataBytes = append(dataBytes, []byte("event: content_block_start\n")...)
 		dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_019ktsPEWabjtYw1iGdjT2Qy","name":"get_weather","input":{}}}`+"\n\n")...)
@@ -396,7 +451,11 @@ func handlerMessagesStreamEmptyMessages(numEmptyMessages int, payload string) te
 		var dataBytes []byte
 
 		dataBytes = append(dataBytes, []byte("event: message_start\n")...)
-		dataBytes = append(dataBytes, []byte(`data: {"type":"message_start","message":{"id":"123333","type":"message","role":"assistant","model":"claude-3-opus-20240229","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":844,"output_tokens":2}}}`+"\n\n")...)
+		dataBytes = append(
+			dataBytes,
+			[]byte(
+				`data: {"type":"message_start","message":{"id":"123333","type":"message","role":"assistant","model":"claude-3-opus-20240229","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":844,"output_tokens":2}}}`+"\n\n",
+			)...)
 
 		for i := 0; i < numEmptyMessages; i++ {
 			dataBytes = append(dataBytes, []byte(payload+"\n")...)

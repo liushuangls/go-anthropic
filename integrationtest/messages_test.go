@@ -24,7 +24,10 @@ func TestIntegrationMessages(t *testing.T) {
 	}
 
 	t.Run("CreateMessages on real API", func(t *testing.T) {
-		betaOpts := anthropic.WithBetaVersion(anthropic.BetaTools20240404, anthropic.BetaMaxTokens35Sonnet20240715)
+		betaOpts := anthropic.WithBetaVersion(
+			anthropic.BetaTools20240404,
+			anthropic.BetaMaxTokens35Sonnet20240715,
+		)
 		newClient := anthropic.NewClient(APIKey, betaOpts)
 
 		resp, err := newClient.CreateMessages(ctx, request)
