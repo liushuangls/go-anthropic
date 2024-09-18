@@ -26,7 +26,7 @@ func TestComplete(t *testing.T) {
 	t.Run("create complete success", func(t *testing.T) {
 		client := anthropic.NewClient(test.GetTestToken(), anthropic.WithBaseURL(baseUrl))
 		resp, err := client.CreateComplete(context.Background(), anthropic.CompleteRequest{
-			Model:             anthropic.ModelClaudeInstant1Dot2,
+			Model:             anthropic.ModelClaude3Haiku20240307,
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 			MaxTokensToSample: 1000,
 		})
@@ -40,7 +40,7 @@ func TestComplete(t *testing.T) {
 	t.Run("create complete failure", func(t *testing.T) {
 		client := anthropic.NewClient("invalid token", anthropic.WithBaseURL(baseUrl))
 		_, err := client.CreateComplete(context.Background(), anthropic.CompleteRequest{
-			Model:             anthropic.ModelClaudeInstant1Dot2,
+			Model:             anthropic.ModelClaude3Haiku20240307,
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 			MaxTokensToSample: 1000,
 		})
@@ -52,7 +52,7 @@ func TestComplete(t *testing.T) {
 
 func TestSetTemperature(t *testing.T) {
 	cr := anthropic.CompleteRequest{
-		Model:             anthropic.ModelClaudeInstant1Dot2,
+		Model:             anthropic.ModelClaude3Haiku20240307,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 		MaxTokensToSample: 1000,
 	}
@@ -67,7 +67,7 @@ func TestSetTemperature(t *testing.T) {
 
 func TestSetTopP(t *testing.T) {
 	cr := anthropic.CompleteRequest{
-		Model:             anthropic.ModelClaudeInstant1Dot2,
+		Model:             anthropic.ModelClaude3Haiku20240307,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 		MaxTokensToSample: 1000,
 	}
@@ -82,7 +82,7 @@ func TestSetTopP(t *testing.T) {
 
 func TestSetTopK(t *testing.T) {
 	cr := anthropic.CompleteRequest{
-		Model:             anthropic.ModelClaudeInstant1Dot2,
+		Model:             anthropic.ModelClaude3Haiku20240307,
 		Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 		MaxTokensToSample: 1000,
 	}

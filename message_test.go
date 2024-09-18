@@ -50,7 +50,7 @@ func TestMessages(t *testing.T) {
 
 	t.Run("create messages success", func(t *testing.T) {
 		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
@@ -65,7 +65,7 @@ func TestMessages(t *testing.T) {
 
 	t.Run("create messages success with single system message", func(t *testing.T) {
 		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
@@ -81,7 +81,7 @@ func TestMessages(t *testing.T) {
 
 	t.Run("create messages success with single multi-system message", func(t *testing.T) {
 		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
@@ -97,7 +97,7 @@ func TestMessages(t *testing.T) {
 
 	t.Run("create messages success with multi-system messages", func(t *testing.T) {
 		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
@@ -281,7 +281,7 @@ func TestMessagesTokenError(t *testing.T) {
 		anthropic.WithBaseURL(baseUrl),
 	)
 	_, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-		Model: anthropic.ModelClaudeInstant1Dot2,
+		Model: anthropic.ModelClaude3Haiku20240307,
 		Messages: []anthropic.Message{
 			anthropic.NewUserTextMessage("What is your name?"),
 		},
@@ -562,7 +562,7 @@ func TestMessagesWithCaching(t *testing.T) {
 
 	t.Run("caches single message", func(t *testing.T) {
 		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				{
 					Role: anthropic.RoleUser,
@@ -588,7 +588,7 @@ func TestMessagesWithCaching(t *testing.T) {
 
 	t.Run("caches a multi-system message", func(t *testing.T) {
 		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			MultiSystem: []anthropic.MessageSystemPart{
 				{
 					Type: "text",

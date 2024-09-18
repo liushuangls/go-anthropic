@@ -34,7 +34,7 @@ func TestMessagesStream(t *testing.T) {
 	var received string
 	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
@@ -96,7 +96,7 @@ func TestMessagesStreamError(t *testing.T) {
 	)
 	param := anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
@@ -138,7 +138,7 @@ func TestCreateMessagesStream(t *testing.T) {
 		)
 		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 			MessagesRequest: anthropic.MessagesRequest{
-				Model:     anthropic.ModelClaudeInstant1Dot2,
+				Model:     anthropic.ModelClaude3Haiku20240307,
 				Messages:  []anthropic.Message{},
 				MaxTokens: 1000,
 			},
@@ -168,7 +168,7 @@ func TestCreateMessagesStream(t *testing.T) {
 		)
 		_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 			MessagesRequest: anthropic.MessagesRequest{
-				Model: anthropic.ModelClaudeInstant1Dot2,
+				Model: anthropic.ModelClaude3Haiku20240307,
 				Messages: []anthropic.Message{
 					anthropic.NewUserTextMessage("What's the weather like?"),
 				},
@@ -320,7 +320,7 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 	dataBytes = append(
 		dataBytes,
 		[]byte(
-			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-instant-1.2","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
+			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
 		)...)
 
 	dataBytes = append(dataBytes, []byte("event: content_block_start\n")...)
