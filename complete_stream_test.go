@@ -135,7 +135,7 @@ func handlerCompleteStream(w http.ResponseWriter, r *http.Request) {
 			dataBytes,
 			[]byte(
 				fmt.Sprintf(
-					`data: {"type":"completion","id":"compl_01GatBXF5t5K51mYzbVgRJfZ","completion":"%s","stop_reason":null,"model":"claude-3-haiku-20240307"","stop":null,"log_id":"compl_01GatBXF5t5K51mYzbVgRJfZ"}`,
+					`data: {"type":"completion","id":"compl_01GatBXF5t5K51mYzbVgRJfZ","completion":"%s","stop_reason":null,"model":"claude-3-haiku-20240307","stop":null,"log_id":"compl_01GatBXF5t5K51mYzbVgRJfZ"}`,
 					t,
 				)+"\n\n",
 			)...)
@@ -145,7 +145,7 @@ func handlerCompleteStream(w http.ResponseWriter, r *http.Request) {
 	dataBytes = append(
 		dataBytes,
 		[]byte(
-			`data: {"type":"completion","id":"compl_01GatBXF5t5K51mYzbVgRJfZ","completion":"","stop_reason":"stop_sequence","model":"claude-3-haiku-20240307"","stop":null,"log_id":"compl_01GatBXF5t5K51mYzbVgRJfZ"}`+"\n\n",
+			`data: {"type":"completion","id":"compl_01GatBXF5t5K51mYzbVgRJfZ","completion":"","stop_reason":"stop_sequence","model":"claude-3-haiku-20240307","stop":null,"log_id":"compl_01GatBXF5t5K51mYzbVgRJfZ"}`+"\n\n",
 		)...)
 
 	_, _ = w.Write(dataBytes)
