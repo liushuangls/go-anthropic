@@ -338,6 +338,8 @@ type ToolDefinition struct {
 	// The jsonschema package is provided for convenience, but you should
 	// consider another specialized library if you require more complex schemas.
 	InputSchema any `json:"input_schema"`
+
+	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
 type ToolChoice struct {
