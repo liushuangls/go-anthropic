@@ -10,6 +10,7 @@ const (
 	ModelClaude3Sonnet20240229     Model = "claude-3-sonnet-20240229"
 	ModelClaude3Dot5Sonnet20240620 Model = "claude-3-5-sonnet-20240620"
 	ModelClaude3Dot5Sonnet20241022 Model = "claude-3-5-sonnet-20241022"
+	ModelClaude3Dot5SonnetLatest   Model = "claude-3-5-sonnet-latest"
 	ModelClaude3Haiku20240307      Model = "claude-3-haiku-20240307"
 )
 
