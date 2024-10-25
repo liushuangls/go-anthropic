@@ -16,7 +16,7 @@ type BatchRequest struct {
 }
 
 type InnerRequests struct {
-	CustomId string          `json:"custon_id"`
+	CustomId string          `json:"custom_id"`
 	Params   MessagesRequest `json:"params"`
 }
 

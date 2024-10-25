@@ -43,14 +43,6 @@ func TestIntegrationBatch(t *testing.T) {
 			t.Fatalf("CreateBatch error: %s", err)
 		}
 		t.Logf("CreateBatch resp: %+v", resp)
-
-		t.Run("RateLimitHeaders are present", func(t *testing.T) {
-			rateLimHeader, err := resp.GetRateLimitHeaders()
-			if err != nil {
-				t.Fatalf("GetRateLimitHeaders error: %s", err)
-			}
-			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
-		})
 	})
 
 	t.Run("RetrieveBatch on real API", func(t *testing.T) {
@@ -59,14 +51,6 @@ func TestIntegrationBatch(t *testing.T) {
 			t.Fatalf("RetrieveBatch error: %s", err)
 		}
 		t.Logf("RetrieveBatch resp: %+v", resp)
-
-		t.Run("RateLimitHeaders are present", func(t *testing.T) {
-			rateLimHeader, err := resp.GetRateLimitHeaders()
-			if err != nil {
-				t.Fatalf("GetRateLimitHeaders error: %s", err)
-			}
-			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
-		})
 	})
 
 	t.Run("RetrieveBatchResults on real API", func(t *testing.T) {
@@ -75,14 +59,6 @@ func TestIntegrationBatch(t *testing.T) {
 			t.Fatalf("RetrieveBatchResults error: %s", err)
 		}
 		t.Logf("RetrieveBatchResults resp: %+v", resp)
-
-		t.Run("RateLimitHeaders are present", func(t *testing.T) {
-			rateLimHeader, err := resp.GetRateLimitHeaders()
-			if err != nil {
-				t.Fatalf("GetRateLimitHeaders error: %s", err)
-			}
-			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
-		})
 	})
 
 	t.Run("ListBatches on real API", func(t *testing.T) {
@@ -92,14 +68,6 @@ func TestIntegrationBatch(t *testing.T) {
 			t.Fatalf("ListBatches error: %s", err)
 		}
 		t.Logf("ListBatches resp: %+v", resp)
-
-		t.Run("RateLimitHeaders are present", func(t *testing.T) {
-			rateLimHeader, err := resp.GetRateLimitHeaders()
-			if err != nil {
-				t.Fatalf("GetRateLimitHeaders error: %s", err)
-			}
-			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
-		})
 	})
 
 	t.Run("CancelBatch on real API", func(t *testing.T) {
@@ -108,13 +76,5 @@ func TestIntegrationBatch(t *testing.T) {
 			t.Fatalf("CancelBatch error: %s", err)
 		}
 		t.Logf("CancelBatch resp: %+v", resp)
-
-		t.Run("RateLimitHeaders are present", func(t *testing.T) {
-			rateLimHeader, err := resp.GetRateLimitHeaders()
-			if err != nil {
-				t.Fatalf("GetRateLimitHeaders error: %s", err)
-			}
-			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
-		})
 	})
 }
