@@ -95,8 +95,7 @@ func (c *Client) RetrieveBatch(
 	}
 
 	urlSuffix := "/messages/batches/" + string(batchId)
-	// no body as we are doing a GET
-	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, "", setters...)
+	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, nil, setters...)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +131,7 @@ func (c *Client) RetrieveBatchResults(
 	urlSuffix := "/messages/batches/" + string(batchId) + "/results"
 
 	// no body - as we're just doing a GET
-	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, "", setters...)
+	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, nil, setters...)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +214,7 @@ func (c *Client) ListBatches(
 
 	urlSuffix := "/messages/batches/"
 	// no body as we are doing a GET
-	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, "", setters...)
+	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, nil, setters...)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +236,7 @@ func (c *Client) CancelBatch(
 
 	urlSuffix := "/messages/batches/" + string(batchId) + "/cancel"
 	// no body as we are doing a GET
-	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, "", setters...)
+	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, nil, setters...)
 	if err != nil {
 		return nil, err
 	}

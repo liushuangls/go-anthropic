@@ -2,20 +2,31 @@ package integrationtest
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/liushuangls/go-anthropic/v2"
 )
 
+func randomString(l int) string {
+	const charset = "1234567890abcdef"
+	b := make([]byte, l)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
 func TestIntegrationBatch(t *testing.T) {
 	testAPIKey(t)
-	client := anthropic.NewClient(APIKey)
 	ctx := context.Background()
 
-	request := anthropic.BatchRequest{
+	myId := "rand_id_" + randomString(5)
+	createBatchRequest := anthropic.BatchRequest{
 		Requests: []anthropic.InnerRequests{
 			{
-				CustomId: "fake-id-1",
+				CustomId: myId,
 				Params: anthropic.MessagesRequest{
 					Model:       anthropic.ModelClaude3Haiku20240307,
 					MultiSystem: anthropic.NewMultiSystemMessages("you are an assistant", "you are snarky"),
@@ -30,37 +41,36 @@ func TestIntegrationBatch(t *testing.T) {
 		},
 	}
 
-	t.Run("CreateMessages on real API", func(t *testing.T) {
-		betaOpts := anthropic.WithBetaVersion(
-			anthropic.BetaTools20240404,
-			anthropic.BetaMaxTokens35Sonnet20240715,
-			anthropic.BetaMessageBatches20240924,
-		)
-		newClient := anthropic.NewClient(APIKey, betaOpts)
+	betaOpts := anthropic.WithBetaVersion(
+		anthropic.BetaTools20240404,
+		anthropic.BetaMaxTokens35Sonnet20240715,
+		anthropic.BetaMessageBatches20240924,
+	)
+	client := anthropic.NewClient(APIKey, betaOpts)
 
-		resp, err := newClient.CreateBatch(ctx, request)
+	// this will be set by the CreateBatch call below, and used in later tests
+	var batchID anthropic.BatchId
+
+	t.Run("CreateBatch on real API", func(t *testing.T) {
+		resp, err := client.CreateBatch(ctx, createBatchRequest)
 		if err != nil {
 			t.Fatalf("CreateBatch error: %s", err)
 		}
 		t.Logf("CreateBatch resp: %+v", resp)
+
+		// Save batchID for later tests
+		batchID = resp.Id
 	})
 
 	t.Run("RetrieveBatch on real API", func(t *testing.T) {
-		resp, err := client.RetrieveBatch(ctx, "fake-id-1")
+		resp, err := client.RetrieveBatch(ctx, batchID)
 		if err != nil {
 			t.Fatalf("RetrieveBatch error: %s", err)
 		}
 		t.Logf("RetrieveBatch resp: %+v", resp)
 	})
 
-	t.Run("RetrieveBatchResults on real API", func(t *testing.T) {
-		resp, err := client.RetrieveBatchResults(ctx, "fake-id-1")
-		if err != nil {
-			t.Fatalf("RetrieveBatchResults error: %s", err)
-		}
-		t.Logf("RetrieveBatchResults resp: %+v", resp)
-	})
-
+	var completedBatch *anthropic.BatchId
 	t.Run("ListBatches on real API", func(t *testing.T) {
 		lbr := anthropic.ListBatchRequest{} // todo test args
 		resp, err := client.ListBatches(ctx, lbr)
@@ -68,10 +78,34 @@ func TestIntegrationBatch(t *testing.T) {
 			t.Fatalf("ListBatches error: %s", err)
 		}
 		t.Logf("ListBatches resp: %+v", resp)
+
+		fmt.Printf("ListBatches resp: %+v\n", resp)
+
+		for _, batch := range resp.Data {
+			if batch.ProcessingStatus == "ended" && batch.CancelInitiatedAt == nil {
+				completedBatch = &batch.Id
+				break
+			}
+		}
 	})
 
+	if completedBatch == nil {
+		t.Skip("No completed batch to test RetrieveBatchResults")
+	} else {
+		// This test should be run after the first batch has completed.
+		// You should have a completed batch in your account to run this test!
+		// You can have a batch you run to completion by commenting out the CancelBatch call below.
+		t.Run("RetrieveBatchResults on real API", func(t *testing.T) {
+			resp, err := client.RetrieveBatchResults(ctx, batchID)
+			if err != nil {
+				t.Fatalf("RetrieveBatchResults error: %s", err)
+			}
+			t.Logf("RetrieveBatchResults resp: %+v", resp)
+		})
+	}
+
 	t.Run("CancelBatch on real API", func(t *testing.T) {
-		resp, err := client.CancelBatch(ctx, "fake-id-1")
+		resp, err := client.CancelBatch(ctx, batchID)
 		if err != nil {
 			t.Fatalf("CancelBatch error: %s", err)
 		}
