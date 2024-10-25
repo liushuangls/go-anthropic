@@ -2,7 +2,6 @@ package integrationtest
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"testing"
 
@@ -72,14 +71,14 @@ func TestIntegrationBatch(t *testing.T) {
 
 	var completedBatch *anthropic.BatchId
 	t.Run("ListBatches on real API", func(t *testing.T) {
-		lbr := anthropic.ListBatchRequest{} // todo test args
-		resp, err := client.ListBatches(ctx, lbr)
+		req := anthropic.ListBatchRequest{
+			Limit: 99,
+		}
+		resp, err := client.ListBatches(ctx, req)
 		if err != nil {
 			t.Fatalf("ListBatches error: %s", err)
 		}
 		t.Logf("ListBatches resp: %+v", resp)
-
-		fmt.Printf("ListBatches resp: %+v\n", resp)
 
 		for _, batch := range resp.Data {
 			if batch.ProcessingStatus == "ended" && batch.CancelInitiatedAt == nil {
@@ -90,13 +89,14 @@ func TestIntegrationBatch(t *testing.T) {
 	})
 
 	if completedBatch == nil {
+		// We probably need a better way to test this, but for now we'll skip if there's no completed batch
 		t.Skip("No completed batch to test RetrieveBatchResults")
 	} else {
 		// This test should be run after the first batch has completed.
 		// You should have a completed batch in your account to run this test!
 		// You can have a batch you run to completion by commenting out the CancelBatch call below.
 		t.Run("RetrieveBatchResults on real API", func(t *testing.T) {
-			resp, err := client.RetrieveBatchResults(ctx, batchID)
+			resp, err := client.RetrieveBatchResults(ctx, *completedBatch)
 			if err != nil {
 				t.Fatalf("RetrieveBatchResults error: %s", err)
 			}
