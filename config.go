@@ -18,10 +18,10 @@ const (
 type BetaVersion string
 
 const (
-	BetaTools20240404         BetaVersion = "tools-2024-04-04"
-	BetaTools20240516         BetaVersion = "tools-2024-05-16"
-	BetaPromptCaching20240731 BetaVersion = "prompt-caching-2024-07-31"
-	BetaMessagBatches20240924 BetaVersion = "message-batches-2024-09-24"
+	BetaTools20240404          BetaVersion = "tools-2024-04-04"
+	BetaTools20240516          BetaVersion = "tools-2024-05-16"
+	BetaPromptCaching20240731  BetaVersion = "prompt-caching-2024-07-31"
+	BetaMessageBatches20240924 BetaVersion = "message-batches-2024-09-24"
 
 	BetaMaxTokens35Sonnet20240715 BetaVersion = "max-tokens-3-5-sonnet-2024-07-15"
 )
