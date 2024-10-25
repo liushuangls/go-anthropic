@@ -104,6 +104,14 @@ func TestIntegrationBatch(t *testing.T) {
 				t.Fatalf("RetrieveBatchResults error: %s", err)
 			}
 			t.Logf("RetrieveBatchResults resp: %+v", resp)
+
+			if len(resp.Responses) == 0 {
+				t.Fatalf("RetrieveBatchResults returned no responses")
+			}
+
+			if resp.Responses[0].CustomId == "" {
+				t.Fatalf("RetrieveBatchResults returned a response with no CustomId. Parse error?")
+			}
 		})
 	}
 

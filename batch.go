@@ -12,21 +12,20 @@ import (
 	"time"
 )
 
-// While in beta, batches may contain up to 10,000 requests and be up to 32 MB in total size.
-type BatchRequest struct {
-	Requests []InnerRequests `json:"requests"`
-}
+type ResultType string
 
-type InnerRequests struct {
-	CustomId string          `json:"custom_id"`
-	Params   MessagesRequest `json:"params"`
-}
+const (
+	ResultTypeSucceeded ResultType = "succeeded"
+	ResultTypeErrored   ResultType = "errored"
+	ResultTypeCanceled  ResultType = "canceled"
+	ResultTypeExpired   ResultType = "expired"
+)
 
 type BatchId string
+
 type BatchResponseType string
 
 const (
-	// only option for now.
 	BatchResponseTypeMessageBatch BatchResponseType = "message_batch"
 )
 
@@ -37,6 +36,16 @@ const (
 	ProcessingStatusCanceling  ProcessingStatus = "canceling"
 	ProcessingStatusEnded      ProcessingStatus = "ended"
 )
+
+// While in beta, batches may contain up to 10,000 requests and be up to 32 MB in total size.
+type BatchRequest struct {
+	Requests []InnerRequests `json:"requests"`
+}
+
+type InnerRequests struct {
+	CustomId string          `json:"custom_id"`
+	Params   MessagesRequest `json:"params"`
+}
 
 // All times returned in RFC 3339
 type BatchResponse struct {
@@ -108,6 +117,14 @@ func (c *Client) RetrieveBatch(
 	return &response, err
 }
 
+type BatchResult struct {
+	CustomId string `json:"custom_id"`
+	Result   struct {
+		Type    ResultType       `json:"type"`
+		Message MessagesResponse `json:"message"`
+	} `json:"result"`
+}
+
 type RetrieveBatchResponse struct {
 	httpHeader
 
@@ -116,7 +133,7 @@ type RetrieveBatchResponse struct {
 	// be in the same order as requests. Use the custom_id field to match
 	// results to requests.
 
-	Responses   []MessagesResponse
+	Responses   []BatchResult
 	RawResponse []byte
 }
 
@@ -158,13 +175,13 @@ func (c *Client) RetrieveBatchResults(
 	// for each line in the response, decode the JSON object into a MessagesResponse
 	// and append it to the Responses slice.
 	// this is tricky because the content within the response may contain newline control characters (\n)
-
+	// TODO: test this and make sure it works
 	for _, line := range bytes.Split(response.RawResponse, []byte("\n")) {
 		if len(line) == 0 {
 			continue
 		}
 
-		var parsed MessagesResponse
+		var parsed BatchResult
 		err := json.Unmarshal(line, &parsed)
 		if err != nil {
 			return nil, err
