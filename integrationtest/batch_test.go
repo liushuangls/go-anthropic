@@ -27,9 +27,12 @@ func TestIntegrationBatch(t *testing.T) {
 			{
 				CustomId: myId,
 				Params: anthropic.MessagesRequest{
-					Model:       anthropic.ModelClaude3Haiku20240307,
-					MultiSystem: anthropic.NewMultiSystemMessages("you are an assistant", "you are snarky"),
-					MaxTokens:   10,
+					Model: anthropic.ModelClaude3Haiku20240307,
+					MultiSystem: anthropic.NewMultiSystemMessages(
+						"you are an assistant",
+						"you are snarky",
+					),
+					MaxTokens: 10,
 					Messages: []anthropic.Message{
 						anthropic.NewUserTextMessage("What is your name?"),
 						anthropic.NewAssistantTextMessage("My name is Claude."),
