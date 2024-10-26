@@ -289,7 +289,7 @@ func TestMessagesStreamToolUse(t *testing.T) {
 }
 
 func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
-	request, err := getMessagesRequest(r)
+	request, err := getRequest[anthropic.MessagesRequest](r)
 	if err != nil {
 		http.Error(w, "request error", http.StatusBadRequest)
 		return
@@ -362,7 +362,7 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerMessagesStreamToolUse(w http.ResponseWriter, r *http.Request) {
-	messagesReq, err := getMessagesRequest(r)
+	messagesReq, err := getRequest[anthropic.MessagesRequest](r)
 	if err != nil {
 		http.Error(w, "request error", http.StatusBadRequest)
 		return
@@ -440,7 +440,7 @@ func handlerMessagesStreamToolUse(w http.ResponseWriter, r *http.Request) {
 
 func handlerMessagesStreamEmptyMessages(numEmptyMessages int, payload string) test.Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := getMessagesRequest(r)
+		_, err := getRequest[anthropic.MessagesRequest](r)
 		if err != nil {
 			http.Error(w, "request error", http.StatusBadRequest)
 			return

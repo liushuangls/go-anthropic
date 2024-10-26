@@ -3,7 +3,6 @@ package anthropic_test
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strconv"
 	"testing"
@@ -105,7 +104,7 @@ func handleCompleteEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var completeReq anthropic.CompleteRequest
-	if completeReq, err = getCompleteRequest(r); err != nil {
+	if completeReq, err = getRequest[anthropic.CompleteRequest](r); err != nil {
 		http.Error(w, "could not read request", http.StatusInternalServerError)
 		return
 	}
@@ -118,17 +117,4 @@ func handleCompleteEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 	resBytes, _ = json.Marshal(res)
 	_, _ = w.Write(resBytes)
-}
-
-func getCompleteRequest(r *http.Request) (req anthropic.CompleteRequest, err error) {
-	reqBody, err := io.ReadAll(r.Body)
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(reqBody, &req)
-	if err != nil {
-		return
-	}
-	return
 }
