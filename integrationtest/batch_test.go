@@ -74,8 +74,8 @@ func TestIntegrationBatch(t *testing.T) {
 
 	var completedBatch *anthropic.BatchId
 	t.Run("ListBatches on real API", func(t *testing.T) {
-		req := anthropic.ListBatchRequest{
-			Limit: 99,
+		req := anthropic.ListBatchesRequest{
+			Limit: toPtr(99),
 		}
 		resp, err := client.ListBatches(ctx, req)
 		if err != nil {

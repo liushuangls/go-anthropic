@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func toPtr(s string) *string {
+func toPtr[T any](s T) *T {
 	return &s
 }
 

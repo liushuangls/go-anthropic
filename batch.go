@@ -117,12 +117,14 @@ func (c *Client) RetrieveBatch(
 	return &response, err
 }
 
+type BatchResultCore struct {
+	Type   ResultType       `json:"type"`
+	Result MessagesResponse `json:"message"`
+}
+
 type BatchResult struct {
-	CustomId string `json:"custom_id"`
-	Result   struct {
-		Type    ResultType       `json:"type"`
-		Message MessagesResponse `json:"message"`
-	} `json:"result"`
+	CustomId string          `json:"custom_id"`
+	Result   BatchResultCore `json:"result"`
 }
 
 type RetrieveBatchResultsResponse struct {
@@ -202,7 +204,7 @@ func decodeRawResponse(rawResponse []byte) ([]BatchResult, error) {
 	return results, nil
 }
 
-type ListBatchResponse struct {
+type ListBatchesResponse struct {
 	httpHeader
 
 	Data    []BatchRespCore `json:"data"`
@@ -211,14 +213,14 @@ type ListBatchResponse struct {
 	LastId  *BatchId        `json:"last_id"`
 }
 
-type ListBatchRequest struct {
-	BeforeId string `json:"before_id,omitempty"`
-	AfterId  string `json:"after_id,omitempty"`
-	Limit    int    `json:"limit,omitempty"`
+type ListBatchesRequest struct {
+	BeforeId *string `json:"before_id,omitempty"`
+	AfterId  *string `json:"after_id,omitempty"`
+	Limit    *int    `json:"limit,omitempty"`
 }
 
-func (l ListBatchRequest) validate() error {
-	if l.Limit < 1 || l.Limit > 100 {
+func (l ListBatchesRequest) validate() error {
+	if l.Limit != nil && (*l.Limit < 1 || *l.Limit > 100) {
 		return errors.New("limit must be between 1 and 100")
 	}
 
@@ -227,28 +229,28 @@ func (l ListBatchRequest) validate() error {
 
 func (c *Client) ListBatches(
 	ctx context.Context,
-	lbr ListBatchRequest,
-) (*ListBatchResponse, error) {
+	lBatchReq ListBatchesRequest,
+) (*ListBatchesResponse, error) {
 	var setters []requestSetter
 	if len(c.config.BetaVersion) > 0 {
 		setters = append(setters, withBetaVersion(c.config.BetaVersion...))
 	}
 
-	if err := lbr.validate(); err != nil {
+	if err := lBatchReq.validate(); err != nil {
 		return nil, err
 	}
 
-	urlSuffix := "/messages/batches/"
+	urlSuffix := "/messages/batches"
 
 	v := url.Values{}
-	if lbr.BeforeId != "" {
-		v.Set("before_id", lbr.BeforeId)
+	if lBatchReq.BeforeId != nil {
+		v.Set("before_id", *lBatchReq.BeforeId)
 	}
-	if lbr.AfterId != "" {
-		v.Set("after_id", lbr.AfterId)
+	if lBatchReq.AfterId != nil {
+		v.Set("after_id", *lBatchReq.AfterId)
 	}
-	if lbr.Limit > 0 {
-		v.Set("limit", fmt.Sprintf("%d", lbr.Limit))
+	if lBatchReq.Limit != nil {
+		v.Set("limit", fmt.Sprintf("%d", *lBatchReq.Limit))
 	}
 
 	// encode the query parameters into the URL
@@ -258,7 +260,7 @@ func (c *Client) ListBatches(
 		return nil, err
 	}
 
-	var response ListBatchResponse
+	var response ListBatchesResponse
 	err = c.sendRequest(req, &response)
 
 	return &response, err
