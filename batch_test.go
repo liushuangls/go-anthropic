@@ -34,9 +34,12 @@ func TestCreateBatch(t *testing.T) {
 				{
 					CustomId: "custom-identifier-not-real-this-is-a-test",
 					Params: anthropic.MessagesRequest{
-						Model:       anthropic.ModelClaude3Haiku20240307,
-						MultiSystem: anthropic.NewMultiSystemMessages("you are an assistant", "you are snarky"),
-						MaxTokens:   10,
+						Model: anthropic.ModelClaude3Haiku20240307,
+						MultiSystem: anthropic.NewMultiSystemMessages(
+							"you are an assistant",
+							"you are snarky",
+						),
+						MaxTokens: 10,
 						Messages: []anthropic.Message{
 							anthropic.NewUserTextMessage("What is your name?"),
 							anthropic.NewAssistantTextMessage("My name is Claude."),
@@ -97,7 +100,9 @@ func handleCreateBatchEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	res := anthropic.BatchResponse{
 		BatchRespCore: anthropic.BatchRespCore{
-			Id:               anthropic.BatchId("batch_id_" + strconv.FormatInt(time.Now().Unix(), 10)),
+			Id: anthropic.BatchId(
+				"batch_id_" + strconv.FormatInt(time.Now().Unix(), 10),
+			),
 			Type:             anthropic.BatchResponseTypeMessageBatch,
 			ProcessingStatus: anthropic.ProcessingStatusInProgress,
 			RequestCounts: anthropic.RequestCounts{

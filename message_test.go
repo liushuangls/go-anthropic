@@ -848,4 +848,3 @@ func handleMessagesEndpoint(headers map[string]string) func(http.ResponseWriter,
 		_, _ = w.Write(resBytes)
 	}
 }
-
