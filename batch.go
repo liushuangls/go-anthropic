@@ -57,7 +57,7 @@ type BatchResponse struct {
 type BatchRespCore struct {
 	Id                BatchId           `json:"id"`
 	Type              BatchResponseType `json:"type"`
-	ProcessingStatus  string            `json:"processing_status"`
+	ProcessingStatus  ProcessingStatus  `json:"processing_status"`
 	RequestCounts     RequestCounts     `json:"request_counts"`
 	EndedAt           *time.Time        `json:"ended_at"`
 	CreatedAt         time.Time         `json:"created_at"`
@@ -137,7 +137,6 @@ type RetrieveBatchResponse struct {
 	RawResponse []byte
 }
 
-// Untested - I don't know about this!
 func (c *Client) RetrieveBatchResults(
 	ctx context.Context,
 	batchId BatchId,
@@ -147,6 +146,8 @@ func (c *Client) RetrieveBatchResults(
 		setters = append(setters, withBetaVersion(c.config.BetaVersion...))
 	}
 
+	// The documentation states that the URL should be obtained from the results_url field in the batch response.
+	// It clearly states that the URL should 'not be assumed'. However this seems to work fine.
 	urlSuffix := "/messages/batches/" + string(batchId) + "/results"
 	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, nil, setters...)
 	if err != nil {
@@ -172,11 +173,26 @@ func (c *Client) RetrieveBatchResults(
 		return nil, err
 	}
 
+	response.Responses, err = decodeRawResponse(response.RawResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, err
+}
+
+func decodeRawResponse(rawResponse []byte) ([]BatchResult, error) {
+	// for each line in the response, decode the JSON object into a MessagesResponse
+	// and append it to the Responses slice.
+	// this is tricky because the content within the response may contain newline control characters (\n)
+
 	// for each line in the response, decode the JSON object into a MessagesResponse
 	// and append it to the Responses slice.
 	// this is tricky because the content within the response may contain newline control characters (\n)
 	// TODO: test this and make sure it works
-	for _, line := range bytes.Split(response.RawResponse, []byte("\n")) {
+
+	var results []BatchResult
+	for _, line := range bytes.Split(rawResponse, []byte("\n")) {
 		if len(line) == 0 {
 			continue
 		}
@@ -187,10 +203,10 @@ func (c *Client) RetrieveBatchResults(
 			return nil, err
 		}
 
-		response.Responses = append(response.Responses, parsed)
+		results = append(results, parsed)
 	}
 
-	return &response, err
+	return results, nil
 }
 
 type ListBatchResponse struct {
@@ -209,7 +225,7 @@ type ListBatchRequest struct {
 }
 
 func (l ListBatchRequest) validate() error {
-	if l.Limit < 0 || l.Limit > 100 {
+	if l.Limit < 1 || l.Limit > 100 {
 		return errors.New("limit must be between 1 and 100")
 	}
 
