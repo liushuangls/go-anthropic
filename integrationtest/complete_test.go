@@ -15,7 +15,7 @@ func TestIntegrationComplete(t *testing.T) {
 		ctx := context.Background()
 
 		request := anthropic.CompleteRequest{
-			Model:             anthropic.ModelClaudeInstant1Dot2,
+			Model:             anthropic.ModelClaude2Dot1,
 			Prompt:            "\n\nHuman: What is your name?\n\nAssistant:",
 			MaxTokensToSample: 10,
 		}

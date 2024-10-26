@@ -40,7 +40,7 @@ import (
 func main() {
 	client := anthropic.NewClient("your anthropic api key")
 	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-		Model: anthropic.ModelClaudeInstant1Dot2,
+		Model: anthropic.ModelClaude3Haiku20240307,
 		Messages: []anthropic.Message{
 			anthropic.NewUserTextMessage("What is your name?"),
 		},
@@ -75,7 +75,7 @@ func main() {
 	client := anthropic.NewClient("your anthropic api key")
 	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
