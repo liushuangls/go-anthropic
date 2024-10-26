@@ -183,8 +183,14 @@ func handleRetrieveBatchEndpoint(w http.ResponseWriter, r *http.Request) {
 
 func TestRetrieveBatchResults(t *testing.T) {
 	server := test.NewTestServer()
-	server.RegisterHandler("/v1/messages/batches/batch_id_1234/results", handleRetrieveBatchResultsEndpoint)
-	server.RegisterHandler("/v1/messages/batches/batch_id_not_found/results", handleRetrieveBatchResultsEndpoint)
+	server.RegisterHandler(
+		"/v1/messages/batches/batch_id_1234/results",
+		handleRetrieveBatchResultsEndpoint,
+	)
+	server.RegisterHandler(
+		"/v1/messages/batches/batch_id_not_found/results",
+		handleRetrieveBatchResultsEndpoint,
+	)
 
 	ts := server.AnthropicTestServer()
 	ts.Start()
@@ -296,7 +302,10 @@ func handleListBatchesEndpoint(w http.ResponseWriter, r *http.Request) {
 func TestCancelBatch(t *testing.T) {
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages/batches/batch_id_1234/cancel", handleCancelBatchEndpoint)
-	server.RegisterHandler("/v1/messages/batches/batch_id_not_found/cancel", handleCancelBatchEndpoint)
+	server.RegisterHandler(
+		"/v1/messages/batches/batch_id_not_found/cancel",
+		handleCancelBatchEndpoint,
+	)
 
 	ts := server.AnthropicTestServer()
 	ts.Start()
