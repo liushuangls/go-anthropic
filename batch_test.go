@@ -59,6 +59,7 @@ func TestCreateBatch(t *testing.T) {
 		clientWithoutBeta := anthropic.NewClient(
 			test.GetTestToken(),
 			anthropic.WithBaseURL(baseUrl),
+			anthropic.WithBetaVersion(anthropic.BetaMessageBatches20240924),
 		)
 		_, err := clientWithoutBeta.CreateBatch(context.Background(), anthropic.BatchRequest{})
 		if err == nil {
@@ -137,6 +138,7 @@ func TestRetrieveBatch(t *testing.T) {
 	client := anthropic.NewClient(
 		test.GetTestToken(),
 		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithBetaVersion(anthropic.BetaMessageBatches20240924),
 	)
 
 	t.Run("retrieve batch success", func(t *testing.T) {
@@ -200,6 +202,7 @@ func TestRetrieveBatchResults(t *testing.T) {
 	client := anthropic.NewClient(
 		test.GetTestToken(),
 		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithBetaVersion(anthropic.BetaMessageBatches20240924),
 	)
 
 	t.Run("retrieve batch results success", func(t *testing.T) {
@@ -262,6 +265,7 @@ func TestListBatches(t *testing.T) {
 	client := anthropic.NewClient(
 		test.GetTestToken(),
 		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithBetaVersion(anthropic.BetaMessageBatches20240924),
 	)
 
 	t.Run("list batches success", func(t *testing.T) {
@@ -274,6 +278,28 @@ func TestListBatches(t *testing.T) {
 			t.Fatalf("ListBatches error: %s", err)
 		}
 		t.Logf("List Batches resp: %+v", resp)
+	})
+
+	t.Run("list failure: limit too high", func(t *testing.T) {
+		_, err := client.ListBatches(context.Background(), anthropic.ListBatchesRequest{
+			Limit:    toPtr(101),
+			BeforeId: nil,
+			AfterId:  nil,
+		})
+		if err == nil {
+			t.Fatalf("ListBatches expected error, got nil")
+		}
+	})
+
+	t.Run("list batches with before_id and after_id", func(t *testing.T) {
+		_, err := client.ListBatches(context.Background(), anthropic.ListBatchesRequest{
+			Limit:    toPtr(10),
+			BeforeId: toPtr("batch_id_1234"),
+			AfterId:  toPtr("batch_id_567"),
+		})
+		if err != nil {
+			t.Fatalf("ListBatches error: %s", err)
+		}
 	})
 }
 
@@ -315,6 +341,7 @@ func TestCancelBatch(t *testing.T) {
 	client := anthropic.NewClient(
 		test.GetTestToken(),
 		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithBetaVersion(anthropic.BetaMessageBatches20240924),
 	)
 
 	t.Run("cancel batch success", func(t *testing.T) {
