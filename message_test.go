@@ -789,7 +789,7 @@ func handleMessagesEndpoint(headers map[string]string) func(http.ResponseWriter,
 		}
 
 		var messagesReq anthropic.MessagesRequest
-		if messagesReq, err = getMessagesRequest(r); err != nil {
+		if messagesReq, err = getRequest[anthropic.MessagesRequest](r); err != nil {
 			http.Error(w, "could not read request", http.StatusInternalServerError)
 			return
 		}
@@ -849,19 +849,3 @@ func handleMessagesEndpoint(headers map[string]string) func(http.ResponseWriter,
 	}
 }
 
-func getMessagesRequest(r *http.Request) (req anthropic.MessagesRequest, err error) {
-	reqBody, err := io.ReadAll(r.Body)
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(reqBody, &req)
-	if err != nil {
-		return
-	}
-	return
-}
-
-func toPtr(s string) *string {
-	return &s
-}

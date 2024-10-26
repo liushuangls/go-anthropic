@@ -125,7 +125,7 @@ type BatchResult struct {
 	} `json:"result"`
 }
 
-type RetrieveBatchResponse struct {
+type RetrieveBatchResultsResponse struct {
 	httpHeader
 
 	// Each line in the file is a JSON object containing the result of a
@@ -140,7 +140,7 @@ type RetrieveBatchResponse struct {
 func (c *Client) RetrieveBatchResults(
 	ctx context.Context,
 	batchId BatchId,
-) (*RetrieveBatchResponse, error) {
+) (*RetrieveBatchResultsResponse, error) {
 	var setters []requestSetter
 	if len(c.config.BetaVersion) > 0 {
 		setters = append(setters, withBetaVersion(c.config.BetaVersion...))
@@ -154,7 +154,7 @@ func (c *Client) RetrieveBatchResults(
 		return nil, err
 	}
 
-	var response RetrieveBatchResponse
+	var response RetrieveBatchResultsResponse
 
 	res, err := c.config.HTTPClient.Do(req)
 	if err != nil {
@@ -182,15 +182,8 @@ func (c *Client) RetrieveBatchResults(
 }
 
 func decodeRawResponse(rawResponse []byte) ([]BatchResult, error) {
-	// for each line in the response, decode the JSON object into a MessagesResponse
-	// and append it to the Responses slice.
-	// this is tricky because the content within the response may contain newline control characters (\n)
-
-	// for each line in the response, decode the JSON object into a MessagesResponse
-	// and append it to the Responses slice.
-	// this is tricky because the content within the response may contain newline control characters (\n)
-	// TODO: test this and make sure it works
-
+	// This looks fishy, but this logic works.
+	// https://goplay.tools/snippet/tDPm3GJVv0_s
 	var results []BatchResult
 	for _, line := range bytes.Split(rawResponse, []byte("\n")) {
 		if len(line) == 0 {

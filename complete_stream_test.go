@@ -107,7 +107,7 @@ func TestCompleteStreamError(t *testing.T) {
 }
 
 func handlerCompleteStream(w http.ResponseWriter, r *http.Request) {
-	request, err := getCompleteRequest(r)
+	request, err := getRequest[anthropic.CompleteStreamRequest](r)
 	if err != nil {
 		http.Error(w, "request error", http.StatusBadRequest)
 		return
