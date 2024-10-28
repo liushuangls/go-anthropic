@@ -5,14 +5,16 @@
 [![codecov](https://codecov.io/gh/liushuangls/go-anthropic/graph/badge.svg?token=O6JSAOZORX)](https://codecov.io/gh/liushuangls/go-anthropic)
 [![Sanity check](https://github.com/liushuangls/go-anthropic/actions/workflows/pr.yml/badge.svg)](https://github.com/liushuangls/go-anthropic/actions/workflows/pr.yml)
 
-Anthropic Claude API wrapper for Go (Unofficial). Support:
+Anthropic Claude API wrapper for Go (Unofficial).
 
+This package has support for:
 - Completions
 - Streaming Completions
 - Messages
 - Streaming Messages
+- Message Batching
 - Vision
-- Tool use
+- Tool use ([computer use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use))
 - Prompt Caching
 
 ## Installation
@@ -301,7 +303,111 @@ func main() {
 
 </details>
 
+<details>
+<summary>Message Batching</summary>
+
+doc: https://docs.anthropic.com/en/docs/build-with-claude/message-batches
+
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/liushuangls/go-anthropic/v2"
+)
+
+func main() {
+	client := anthropic.NewClient(
+		"your anthropic api key",
+		anthropic.WithBetaVersion(anthropic.BetaMessageBatches20240924‎),
+	)
+
+	resp, err := client.CreateBatch(context.Background(),
+		anthropic.BatchRequest{
+			Requests: []anthropic.InnerRequests{
+				{
+					CustomId: myId,
+					Params: anthropic.MessagesRequest{
+						Model: anthropic.ModelClaude3Haiku20240307,
+						MultiSystem: anthropic.NewMultiSystemMessages(
+							"you are an assistant",
+							"you are snarky",
+						),
+						MaxTokens: 10,
+						Messages: []anthropic.Message{
+							anthropic.NewUserTextMessage("What is your name?"),
+							anthropic.NewAssistantTextMessage("My name is Claude."),
+							anthropic.NewUserTextMessage("What is your favorite color?"),
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		var e *anthropic.APIError
+		if errors.As(err, &e) {
+			fmt.Printf("Messages error, type: %s, message: %s", e.Type, e.Message)
+		} else {
+			fmt.Printf("Messages error: %v\n", err)
+		}
+		return
+	}
+	fmt.Println(resp)
+
+
+	retrieveResp, err := client.RetrieveBatch(ctx, resp.Id)
+	if err != nil {
+		var e *anthropic.APIError
+		if errors.As(err, &e) {
+			fmt.Printf("Messages error, type: %s, message: %s", e.Type, e.Message)
+		} else {
+			fmt.Printf("Messages error: %v\n", err)
+		}
+		return
+	}
+	fmt.Println(retrieveResp)
+
+	resultResp, err := client.RetrieveBatchResults(ctx, "batch_id_your-batch-here")
+	if err != nil {
+		var e *anthropic.APIError
+		if errors.As(err, &e) {
+			fmt.Printf("Messages error, type: %s, message: %s", e.Type, e.Message)
+		} else {
+			fmt.Printf("Messages error: %v\n", err)
+		}
+		return
+	}
+	fmt.Println(resultResp)
+
+
+	listResp, err := client.ListBatches(ctx, anthropic.ListBatchesRequest{})
+	if err != nil {
+		var e *anthropic.APIError
+		if errors.As(err, &e) {
+			fmt.Printf("Messages error, type: %s, message: %s", e.Type, e.Message)
+		} else {
+			fmt.Printf("Messages error: %v\n", err)
+		}
+		return
+	}
+	fmt.Println(listResp)
+
+
+	cancelResp, err := client.CancelBatch(ctx, "batch_id_your-batch-here")
+	if err != nil {
+		t.Fatalf("CancelBatch error: %s", err)
+	}
+	fmt.Println(cancelResp)
+
+```
+
+</details>
+
 ## Acknowledgments
-The following project had particular influence on go-anthropic is design.
+The following project had particular influence on go-anthropic's design.
 
 - [sashabaranov/go-openai](https://github.com/sashabaranov/go-openai)
