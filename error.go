@@ -85,5 +85,10 @@ func (e *APIError) Error() string {
 }
 
 func (e *RequestError) Error() string {
-	return fmt.Sprintf("anthropic request error status code: %d, err: %s, body: %s", e.StatusCode, e.Err, e.Body)
+	return fmt.Sprintf(
+		"anthropic request error status code: %d, err: %s, body: %s",
+		e.StatusCode,
+		e.Err,
+		e.Body,
+	)
 }
