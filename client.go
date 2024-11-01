@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -59,12 +60,17 @@ func (c *Client) sendRequest(req *http.Request, v Response) error {
 
 func (c *Client) handlerRequestError(resp *http.Response) error {
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("error, reading response body: %w", err)
+		}
 		var errRes ErrorResponse
-		err := json.NewDecoder(resp.Body).Decode(&errRes)
+		err = json.Unmarshal(body, &errRes)
 		if err != nil || errRes.Error == nil {
 			reqErr := RequestError{
 				StatusCode: resp.StatusCode,
 				Err:        err,
+				Body:       body,
 			}
 			return &reqErr
 		}
