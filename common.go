@@ -3,7 +3,6 @@ package anthropic
 type Model string
 
 const (
-	ModelClaudeInstant1Dot2        Model = "claude-instant-1.2"
 	ModelClaude2Dot0               Model = "claude-2.0"
 	ModelClaude2Dot1               Model = "claude-2.1"
 	ModelClaude3Opus20240229       Model = "claude-3-opus-20240229"
