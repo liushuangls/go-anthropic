@@ -36,7 +36,7 @@ const (
 type MessagesRequest struct {
 	Model     Model     `json:"model"`
 	Messages  []Message `json:"messages"`
-	MaxTokens int       `json:"max_tokens"`
+	MaxTokens int       `json:"max_tokens,omitempty"`
 
 	System        string              `json:"-"`
 	MultiSystem   []MessageSystemPart `json:"-"`
