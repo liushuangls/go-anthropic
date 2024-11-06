@@ -9,7 +9,10 @@ import (
 
 func TestCountTokens(t *testing.T) {
 	testAPIKey(t)
-	client := anthropic.NewClient(APIKey, anthropic.WithBetaVersion(anthropic.BetaTokenCounting20241101))
+	client := anthropic.NewClient(
+		APIKey,
+		anthropic.WithBetaVersion(anthropic.BetaTokenCounting20241101),
+	)
 	ctx := context.Background()
 
 	request := anthropic.MessagesRequest{
