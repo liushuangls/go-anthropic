@@ -133,11 +133,13 @@ func main() {
 			{
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
-					anthropic.NewImageMessageContent(anthropic.MessageContentImageSource{
-						Type:      "base64",
-						MediaType: imageMediaType,
-						Data:      imageData,
-					}),
+					anthropic.NewImageMessageContent(
+						anthropic.MessageContentSource{
+							Type:      anthropic.MessagesContentSourceTypeBase64,
+							MediaType: imageMediaType,
+							Data:      imageData,
+						},
+					),
 					anthropic.NewTextMessageContent("Describe this image."),
 				},
 			},

@@ -329,7 +329,11 @@ func TestMessagesVision(t *testing.T) {
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
 					anthropic.NewImageMessageContent(
-						anthropic.NewMessageContentSource(anthropic.MessagesContentSourceTypeBase64, imageMediaType, imageData),
+						anthropic.NewMessageContentSource(
+							anthropic.MessagesContentSourceTypeBase64,
+							imageMediaType,
+							imageData,
+						),
 					),
 					anthropic.NewTextMessageContent("Describe these images."),
 				},
