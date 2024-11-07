@@ -329,13 +329,12 @@ func TestMessagesVision(t *testing.T) {
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
 					anthropic.NewImageMessageContent(
-						anthropic.NewMessageContentImageSource("base64", imageMediaType, imageData),
+						anthropic.NewMessageContentSource(
+							anthropic.MessagesContentSourceTypeBase64,
+							imageMediaType,
+							imageData,
+						),
 					),
-					anthropic.NewImageMessageContent(anthropic.MessageContentImageSource{
-						Type:      "base64",
-						MediaType: imageMediaType,
-						Data:      imageData,
-					}),
 					anthropic.NewTextMessageContent("Describe these images."),
 				},
 			},
