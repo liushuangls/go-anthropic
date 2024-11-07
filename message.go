@@ -22,6 +22,7 @@ const (
 	MessagesContentTypeToolResult     MessagesContentType = "tool_result"
 	MessagesContentTypeToolUse        MessagesContentType = "tool_use"
 	MessagesContentTypeInputJsonDelta MessagesContentType = "input_json_delta"
+	MessagesContentTypeDocument       MessagesContentType = "document"
 )
 
 type MessagesStopReason string
@@ -31,6 +32,12 @@ const (
 	MessagesStopReasonMaxTokens    MessagesStopReason = "max_tokens"
 	MessagesStopReasonStopSequence MessagesStopReason = "stop_sequence"
 	MessagesStopReasonToolUse      MessagesStopReason = "tool_use"
+)
+
+type MessagesContentSourceType string
+
+const (
+	MessagesContentSourceTypeBase64 = "base64"
 )
 
 type MessagesRequest struct {
@@ -150,7 +157,7 @@ type MessageContent struct {
 
 	Text *string `json:"text,omitempty"`
 
-	Source *MessageContentImageSource `json:"source,omitempty"`
+	Source *MessageContentSource `json:"source,omitempty"`
 
 	*MessageContentToolResult
 
@@ -168,9 +175,16 @@ func NewTextMessageContent(text string) MessageContent {
 	}
 }
 
-func NewImageMessageContent(source MessageContentImageSource) MessageContent {
+func NewImageMessageContent(source MessageContentSource) MessageContent {
 	return MessageContent{
 		Type:   MessagesContentTypeImage,
+		Source: &source,
+	}
+}
+
+func NewDocumentMessageContent(source MessageContentSource) MessageContent {
+	return MessageContent{
+		Type:   MessagesContentTypeDocument,
 		Source: &source,
 	}
 }
@@ -260,18 +274,19 @@ func NewMessageContentToolResult(
 	}
 }
 
-type MessageContentImageSource struct {
-	Type      string `json:"type"`
-	MediaType string `json:"media_type"`
-	Data      any    `json:"data"`
+type MessageContentSource struct {
+	Type      MessagesContentSourceType `json:"type"`
+	MediaType string                    `json:"media_type"`
+	Data      any                       `json:"data"`
 }
 
-func NewMessageContentImageSource(
-	imageSourceType, mediaType string,
+func NewMessageContentSource(
+	sourceType MessagesContentSourceType,
+	mediaType string,
 	data any,
-) MessageContentImageSource {
-	return MessageContentImageSource{
-		Type:      imageSourceType,
+) MessageContentSource {
+	return MessageContentSource{
+		Type:      sourceType,
 		MediaType: mediaType,
 		Data:      data,
 	}
