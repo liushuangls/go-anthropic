@@ -14,6 +14,8 @@ Anthropic Claude API wrapper for Go (Unofficial). Support:
 - Vision
 - Tool use
 - Prompt Caching
+- PDF
+- Token Counting
 
 ## Installation
 
@@ -134,11 +136,11 @@ func main() {
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
 					anthropic.NewImageMessageContent(
-						anthropic.MessageContentSource{
-							Type:      anthropic.MessagesContentSourceTypeBase64,
-							MediaType: imageMediaType,
-							Data:      imageData,
-						},
+						anthropic.NewMessageContentSource(
+							anthropic.MessagesContentSourceTypeBase64,
+							imageMediaType,
+							imageData,
+						),
 					),
 					anthropic.NewTextMessageContent("Describe this image."),
 				},
