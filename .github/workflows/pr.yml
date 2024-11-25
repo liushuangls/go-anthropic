@@ -20,7 +20,7 @@ jobs:
       run: go test -race -covermode=atomic -coverprofile=coverage.out -v .
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5.0.2
+      uses: codecov/codecov-action@v5.0.7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: liushuangls/go-anthropic
