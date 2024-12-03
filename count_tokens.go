@@ -21,7 +21,7 @@ func (c *Client) CountTokens(
 	}
 
 	urlSuffix := "/messages/count_tokens"
-	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, request, setters...)
+	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, &request, setters...)
 	if err != nil {
 		return
 	}

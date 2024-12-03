@@ -41,7 +41,8 @@ const (
 )
 
 type MessagesRequest struct {
-	Model     Model     `json:"model"`
+	Model            Model     `json:"model,omitempty"`
+	AnthropicVersion string    `json:"anthropic_version,omitempty"`
 	Messages  []Message `json:"messages"`
 	MaxTokens int       `json:"max_tokens,omitempty"`
 
@@ -74,6 +75,17 @@ func (m MessagesRequest) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(aux)
+}
+
+var _ VertexAISupport = (*MessagesRequest)(nil)
+
+func (m MessagesRequest) GetModel() Model {
+	return m.Model
+}
+
+func (m *MessagesRequest) SetAnthropicVersion(version APIVersion) {
+	m.AnthropicVersion = string(version)
+	m.Model = ""
 }
 
 func (m *MessagesRequest) SetTemperature(t float32) {
@@ -375,7 +387,11 @@ func (c *Client) CreateMessages(
 	}
 
 	urlSuffix := "/messages"
-	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, request, setters...)
+	if c.IsVertexAI() {
+		urlSuffix = ":rawPredict"
+	}
+
+	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, &request, setters...)
 	if err != nil {
 		return
 	}
