@@ -157,7 +157,7 @@ func main() {
 		}
 		return
 	}
-	fmt.Println(*resp.Content[0].Text)
+	fmt.Println(*resp.Content[0].GetText())
 }
 ```
 </details>
@@ -370,7 +370,7 @@ func main() {
 		}
 		return
 	}
-	fmt.Println(*resp.Content[0].Text)
+	fmt.Println(resp.Content[0].GetText())
 }
 
 ```

@@ -13,9 +13,13 @@ const (
 type APIVersion string
 
 const (
-	APIVersion20230601 APIVersion = "2023-06-01"
+	APIVersion20230601       APIVersion = "2023-06-01"
 	APIVersionVertex20231016 APIVersion = "vertex-2023-10-16"
 )
+
+func (v APIVersion) IsVertexAI() bool {
+	return v == APIVersionVertex20231016
+}
 
 type BetaVersion string
 
@@ -33,7 +37,7 @@ type ApiKeyFunc func() string
 // ClientConfig is a configuration of a client.
 type ClientConfig struct {
 	apiKeyFunc ApiKeyFunc
-	apiKey string
+	apiKey     string
 
 	BaseURL     string
 	APIVersion  APIVersion
@@ -104,7 +108,4 @@ func WithApiKeyFunc(apiKeyFunc ApiKeyFunc) ClientOption {
 	return func(c *ClientConfig) {
 		c.apiKeyFunc = apiKeyFunc
 	}
-}
-func isVertexAI(apiVersion APIVersion) bool {
-	return apiVersion == APIVersionVertex20231016
 }

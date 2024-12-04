@@ -21,36 +21,6 @@ type VertexAPIErrorDetails struct {
 	} `json:"metadata"`
 }
 
-/*
-func (e *VertexAPIError) IsInvalidRequestErr() bool {
-	return e.Type == ErrTypeInvalidRequest
-}
-
-func (e *VertexAPIError) IsAuthenticationErr() bool {
-	return e.Type == ErrTypeAuthentication
-}
-
-func (e *VertexAPIError) IsPermissionErr() bool {
-	return e.Type == ErrTypePermission
-}
-
-func (e *VertexAPIError) IsNotFoundErr() bool {
-	return e.Type == ErrTypeNotFound
-}
-
-func (e *VertexAPIError) IsRateLimitErr() bool {
-	return e.Type == ErrTypeRateLimit
-}
-
-func (e *VertexAPIError) IsApiErr() bool {
-	return e.Type == ErrTypeApi
-}
-
-func (e *VertexAPIError) IsOverloadedErr() bool {
-	return e.Type == ErrTypeOverloaded
-}
-*/
-
 type VertexAIErrorResponse struct {
 	Error *VertexAPIError `json:"error,omitempty"`
 }

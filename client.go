@@ -64,16 +64,6 @@ func (c *Client) handlerRequestError(resp *http.Response) error {
 		if err != nil {
 			return fmt.Errorf("error, reading response body: %w", err)
 		}
-		var errRes ErrorResponse
-		err = json.Unmarshal(body, &errRes)
-		if err != nil || errRes.Error == nil {
-			reqErr := RequestError{
-				StatusCode: resp.StatusCode,
-				Err:        err,
-				Body:       body,
-			}
-			return &reqErr
-		}
 
 		if c.IsVertexAI() && (resp.StatusCode == 401 || resp.StatusCode == 404 || resp.StatusCode == 429) {
 			var errRes VertexAIErrorResponse
@@ -108,7 +98,7 @@ func (c *Client) handlerRequestError(resp *http.Response) error {
 				return &reqErr
 			}
 
-		return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
+			return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
 		}
 
 	}
@@ -116,9 +106,9 @@ func (c *Client) handlerRequestError(resp *http.Response) error {
 }
 
 func (c *Client) fullURL(suffix string, model Model) string {
-	if isVertexAI(c.config.APIVersion) {
+	if c.config.APIVersion.IsVertexAI() {
 		// replace the first slash with a colon
-		return fmt.Sprintf("%s/%s:%s", c.config.BaseURL, translateVertexModel(model), suffix[1:])
+		return fmt.Sprintf("%s/%s:%s", c.config.BaseURL, model.asVertexModel(), suffix[1:])
 	} else {
 		return fmt.Sprintf("%s%s", c.config.BaseURL, suffix)
 	}
@@ -148,12 +138,12 @@ func (c *Client) newRequest(
 ) (req *http.Request, err error) {
 	// if the body implements the ModelGetter interface, use the model from the body
 	model := Model("")
-	if isVertexAI(c.config.APIVersion) && body != nil {
+	if c.config.APIVersion.IsVertexAI() && body != nil {
 		if vertexAISupport, ok := body.(VertexAISupport); ok {
 			model = vertexAISupport.GetModel()
 			vertexAISupport.SetAnthropicVersion(c.config.APIVersion)
 		} else {
-			return nil, fmt.Errorf("this call not supported by the Vertex AI API")
+			return nil, fmt.Errorf("this call is not supported by the Vertex AI API")
 		}
 	}
 
@@ -183,7 +173,7 @@ func (c *Client) newRequest(
 		apiKey = c.config.apiKeyFunc()
 	}
 
-	if isVertexAI(c.config.APIVersion) {
+	if c.config.APIVersion.IsVertexAI() {
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	} else {
 		req.Header.Set("X-Api-Key", apiKey)
@@ -217,5 +207,5 @@ func (c *Client) newStreamRequest(
 }
 
 func (c *Client) IsVertexAI() bool {
-	return isVertexAI(c.config.APIVersion)
+	return c.config.APIVersion.IsVertexAI()
 }

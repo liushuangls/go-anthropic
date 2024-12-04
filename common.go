@@ -22,8 +22,8 @@ const (
 	RoleAssistant ChatRole = "assistant"
 )
 
-func translateVertexModel(model Model) string {
-	switch model {
+func (m Model) asVertexModel() string {
+	switch m {
 	case ModelClaude3Opus20240229:
 		return "claude-3-opus@20240229"
 	case ModelClaude3Sonnet20240229:
@@ -37,6 +37,6 @@ func translateVertexModel(model Model) string {
 	case ModelClaude3Dot5Haiku20241022:
 		return "claude-3-5-haiku@20241022"
 	default:
-		return string(model)
+		return string(m)
 	}
 }
