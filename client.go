@@ -65,53 +65,25 @@ func (c *Client) handlerRequestError(resp *http.Response) error {
 			return fmt.Errorf("error, reading response body: %w", err)
 		}
 
-		if c.IsVertexAI() && (resp.StatusCode == 401 || resp.StatusCode == 404 || resp.StatusCode == 429) {
-			var errRes VertexAIErrorResponse
-			err := json.Unmarshal(body, &errRes)
-			if err != nil {
-				// it could be an array
-				var errResArr []VertexAIErrorResponse
-				err = json.Unmarshal(body, &errResArr)
-				if err == nil && len(errResArr) > 0 {
-					errRes = errResArr[0]
-				}
-			}
-
-			if err != nil || errRes.Error == nil {
-				reqErr := RequestError{
-					StatusCode: resp.StatusCode,
-					Err:        err,
-					Body:       body,
-				}
-				return &reqErr
-			}
-			return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
-		} else {
-			var errRes ErrorResponse
-			err := json.Unmarshal(body, &errRes)
-			if err != nil || errRes.Error == nil {
-				reqErr := RequestError{
-					StatusCode: resp.StatusCode,
-					Err:        err,
-					Body:       body,
-				}
-				return &reqErr
-			}
-
-			return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
+		// use the adapter to translate the error, if it can
+		if err, handled := c.config.Adapter.TranslateError(resp, body); handled {
+			return err
 		}
 
+		var errRes ErrorResponse
+		err = json.Unmarshal(body, &errRes)
+		if err != nil || errRes.Error == nil {
+			reqErr := RequestError{
+				StatusCode: resp.StatusCode,
+				Err:        err,
+				Body:       body,
+			}
+			return &reqErr
+		}
+
+		return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
 	}
 	return nil
-}
-
-func (c *Client) fullURL(suffix string, model Model) string {
-	if c.config.APIVersion.IsVertexAI() {
-		// replace the first slash with a colon
-		return fmt.Sprintf("%s/%s:%s", c.config.BaseURL, model.asVertexModel(), suffix[1:])
-	} else {
-		return fmt.Sprintf("%s%s", c.config.BaseURL, suffix)
-	}
 }
 
 type requestSetter func(req *http.Request)
@@ -136,15 +108,12 @@ func (c *Client) newRequest(
 	body any,
 	requestSetters ...requestSetter,
 ) (req *http.Request, err error) {
-	// if the body implements the ModelGetter interface, use the model from the body
-	model := Model("")
-	if c.config.APIVersion.IsVertexAI() && body != nil {
-		if vertexAISupport, ok := body.(VertexAISupport); ok {
-			model = vertexAISupport.GetModel()
-			vertexAISupport.SetAnthropicVersion(c.config.APIVersion)
-		} else {
-			return nil, fmt.Errorf("this call is not supported by the Vertex AI API")
-		}
+
+	// prepare the request
+	var fullURL string
+	fullURL, err = c.config.Adapter.PrepareRequest(c, method, urlSuffix, body)
+	if err != nil {
+		return nil, err
 	}
 
 	var reqBody []byte
@@ -158,7 +127,7 @@ func (c *Client) newRequest(
 	req, err = http.NewRequestWithContext(
 		ctx,
 		method,
-		c.fullURL(urlSuffix, model),
+		fullURL,
 		bytes.NewBuffer(reqBody),
 	)
 	if err != nil {
@@ -168,17 +137,8 @@ func (c *Client) newRequest(
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Accept", "application/json; charset=utf-8")
 
-	apiKey := c.config.apiKey
-	if c.config.apiKeyFunc != nil {
-		apiKey = c.config.apiKeyFunc()
-	}
-
-	if c.config.APIVersion.IsVertexAI() {
-		req.Header.Set("Authorization", "Bearer "+apiKey)
-	} else {
-		req.Header.Set("X-Api-Key", apiKey)
-		req.Header.Set("Anthropic-Version", string(c.config.APIVersion))
-	}
+	// set any provider-specific headers (including Authorization)
+	c.config.Adapter.SetRequestHeaders(c, req)
 
 	for _, setter := range requestSetters {
 		setter(req)
@@ -204,8 +164,4 @@ func (c *Client) newStreamRequest(
 	req.Header.Set("Connection", "keep-alive")
 
 	return req, nil
-}
-
-func (c *Client) IsVertexAI() bool {
-	return c.config.APIVersion.IsVertexAI()
 }

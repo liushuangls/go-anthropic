@@ -43,8 +43,8 @@ const (
 type MessagesRequest struct {
 	Model            Model     `json:"model,omitempty"`
 	AnthropicVersion string    `json:"anthropic_version,omitempty"`
-	Messages  []Message `json:"messages"`
-	MaxTokens int       `json:"max_tokens,omitempty"`
+	Messages         []Message `json:"messages"`
+	MaxTokens        int       `json:"max_tokens,omitempty"`
 
 	System        string              `json:"-"`
 	MultiSystem   []MessageSystemPart `json:"-"`
@@ -98,6 +98,10 @@ func (m *MessagesRequest) SetTopP(p float32) {
 
 func (m *MessagesRequest) SetTopK(k int) {
 	m.TopK = &k
+}
+
+func (m *MessagesRequest) IsStreaming() bool {
+	return m.Stream
 }
 
 type MessageSystemPart struct {
@@ -387,9 +391,6 @@ func (c *Client) CreateMessages(
 	}
 
 	urlSuffix := "/messages"
-	if c.IsVertexAI() {
-		urlSuffix = ":rawPredict"
-	}
 
 	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, &request, setters...)
 	if err != nil {

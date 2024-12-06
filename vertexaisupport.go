@@ -8,4 +8,5 @@ package anthropic
 type VertexAISupport interface {
 	GetModel() Model
 	SetAnthropicVersion(APIVersion)
+	IsStreaming() bool
 }
