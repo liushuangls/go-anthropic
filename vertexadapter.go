@@ -32,7 +32,11 @@ func (v *VertexAdapter) TranslateError(resp *http.Response, body []byte) (error,
 			}
 			return &reqErr, true
 		}
-		return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error), true
+		return fmt.Errorf(
+			"error, status code: %d, message: %w",
+			resp.StatusCode,
+			errRes.Error,
+		), true
 	}
 
 	return nil, false
@@ -56,7 +60,12 @@ func (v *VertexAdapter) translateUrlSuffix(suffix string, stream bool) (string, 
 	return "", fmt.Errorf("unknown suffix: %s", suffix)
 }
 
-func (v *VertexAdapter) PrepareRequest(c *Client, method string, urlSuffix string, body any) (string, error) {
+func (v *VertexAdapter) PrepareRequest(
+	c *Client,
+	method string,
+	urlSuffix string,
+	body any,
+) (string, error) {
 	// if the body implements the ModelGetter interface, use the model from the body
 	model := Model("")
 	if body != nil {

@@ -26,5 +26,10 @@ type VertexAIErrorResponse struct {
 }
 
 func (e *VertexAPIError) Error() string {
-	return fmt.Sprintf("vertex api error code: %d, status: %s, message: %s", e.Code, e.Status, e.Message)
+	return fmt.Sprintf(
+		"vertex api error code: %d, status: %s, message: %s",
+		e.Code,
+		e.Status,
+		e.Message,
+	)
 }

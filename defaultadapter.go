@@ -19,7 +19,12 @@ func (v *DefaultAdapter) fullURL(baseUrl string, suffix string) string {
 	return fmt.Sprintf("%s%s", baseUrl, suffix)
 }
 
-func (v *DefaultAdapter) PrepareRequest(c *Client, method string, urlSuffix string, body any) (string, error) {
+func (v *DefaultAdapter) PrepareRequest(
+	c *Client,
+	method string,
+	urlSuffix string,
+	body any,
+) (string, error) {
 	return v.fullURL(c.config.BaseURL, urlSuffix), nil
 }
 

@@ -105,7 +105,12 @@ func WithBetaVersion(betaVersion ...BetaVersion) ClientOption {
 
 func WithVertexAI(projectID string, location string) ClientOption {
 	return func(c *ClientConfig) {
-		c.BaseURL = fmt.Sprintf("https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/anthropic/models", location, projectID, location)
+		c.BaseURL = fmt.Sprintf(
+			"https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/anthropic/models",
+			location,
+			projectID,
+			location,
+		)
 		c.APIVersion = APIVersionVertex20231016
 		c.Adapter = &VertexAdapter{}
 	}

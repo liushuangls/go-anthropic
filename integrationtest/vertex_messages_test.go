@@ -12,7 +12,11 @@ import (
 func TestVertexIntegrationMessages(t *testing.T) {
 	testVertexAPIKey(t)
 
-	ts, err := google.JWTAccessTokenSourceWithScope([]byte(VertexAPIKey), "https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/cloud-platform.read-only")
+	ts, err := google.JWTAccessTokenSourceWithScope(
+		[]byte(VertexAPIKey),
+		"https://www.googleapis.com/auth/cloud-platform",
+		"https://www.googleapis.com/auth/cloud-platform.read-only",
+	)
 	if err != nil {
 		fmt.Println("Error creating token source")
 		return
@@ -25,7 +29,10 @@ func TestVertexIntegrationMessages(t *testing.T) {
 		return
 	}
 
-	client := anthropic.NewClient(token.AccessToken, anthropic.WithVertexAI(VertexAPIProject, VertexAPILocation))
+	client := anthropic.NewClient(
+		token.AccessToken,
+		anthropic.WithVertexAI(VertexAPIProject, VertexAPILocation),
+	)
 	ctx := context.Background()
 
 	request := anthropic.MessagesRequest{
@@ -44,7 +51,10 @@ func TestVertexIntegrationMessages(t *testing.T) {
 		// 	anthropic.BetaTools20240404,
 		// 	anthropic.BetaMaxTokens35Sonnet20240715,
 		// )
-		newClient := anthropic.NewClient(token.AccessToken, anthropic.WithVertexAI(VertexAPIProject, VertexAPILocation))
+		newClient := anthropic.NewClient(
+			token.AccessToken,
+			anthropic.WithVertexAI(VertexAPIProject, VertexAPILocation),
+		)
 
 		resp, err := newClient.CreateMessages(ctx, request)
 		if err != nil {
