@@ -464,3 +464,127 @@ func handlerMessagesStreamEmptyMessages(numEmptyMessages int, payload string) te
 		_, _ = w.Write(dataBytes)
 	}
 }
+
+func TestVertexMessagesStream(t *testing.T) {
+	project := "project"
+	location := "location"
+	model := anthropic.ModelClaude3Haiku20240307
+	vertexModel := "claude-3-haiku@20240307"
+
+	baseEndpoint := fmt.Sprintf(
+		"/v1/projects/%s/locations/%s/publishers/anthropic/models",
+		project,
+		location,
+	)
+
+	server := test.NewTestServer()
+	server.RegisterHandler(baseEndpoint+"/"+vertexModel+":streamRawPredict", handlerMessagesStream)
+
+	ts := server.VertexTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + baseEndpoint
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithVertexAI(project, location),
+		anthropic.WithBaseURL(baseUrl),
+	)
+	var received string
+	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+		MessagesRequest: anthropic.MessagesRequest{
+			Model: model,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		},
+		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
+			received += data.Delta.GetText()
+			//t.Logf("CreateMessagesStream delta resp: %+v", data)
+		},
+		OnError:             func(response anthropic.ErrorResponse) {},
+		OnPing:              func(data anthropic.MessagesEventPingData) {},
+		OnMessageStart:      func(data anthropic.MessagesEventMessageStartData) {},
+		OnContentBlockStart: func(data anthropic.MessagesEventContentBlockStartData) {},
+		OnContentBlockStop:  func(data anthropic.MessagesEventContentBlockStopData, content anthropic.MessageContent) {},
+		OnMessageDelta:      func(data anthropic.MessagesEventMessageDeltaData) {},
+		OnMessageStop:       func(data anthropic.MessagesEventMessageStopData) {},
+	})
+	if err != nil {
+		t.Fatalf("CreateMessagesStream error: %s", err)
+	}
+
+	expectedContent := strings.Join(testMessagesStreamContent, "")
+	if received != expectedContent {
+		t.Fatalf(
+			"CreateMessagesStream content not match expected: %s, got: %s",
+			expectedContent,
+			received,
+		)
+	}
+	if resp.GetFirstContentText() != expectedContent {
+		t.Fatalf(
+			"CreateMessagesStream content not match expected: %s, got: %s",
+			expectedContent,
+			resp.GetFirstContentText(),
+		)
+	}
+
+	headers, err := resp.GetRateLimitHeaders()
+	if err != nil {
+		t.Fatalf("CreateMessagesStream GetRateLimitHeaders error: %s", err)
+	}
+	t.Logf("CreateMessagesStream rate limit headers: %+v", headers)
+
+	t.Logf("CreateMessagesStream resp: %+v", resp)
+}
+
+func TestVertexMessagesStreamError(t *testing.T) {
+	project := "project"
+	location := "location"
+	model := anthropic.ModelClaude3Haiku20240307
+	vertexModel := "claude-3-haiku@20240307"
+
+	baseEndpoint := fmt.Sprintf(
+		"/v1/projects/%s/locations/%s/publishers/anthropic/models",
+		project,
+		location,
+	)
+
+	server := test.NewTestServer()
+	server.RegisterHandler(baseEndpoint+"/"+vertexModel+":streamRawPredict", handlerMessagesStream)
+
+	ts := server.VertexTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + baseEndpoint
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithVertexAI(project, location),
+		anthropic.WithBaseURL(baseUrl),
+	)
+	param := anthropic.MessagesStreamRequest{
+		MessagesRequest: anthropic.MessagesRequest{
+			Model: model,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		},
+		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
+			t.Logf("CreateMessagesStream delta resp: %+v", data)
+		},
+		OnError: func(response anthropic.ErrorResponse) {},
+	}
+	param.SetTemperature(2)
+	param.SetTopP(2)
+	param.SetTopK(1)
+	_, err := client.CreateMessagesStream(context.Background(), param)
+	if err == nil {
+		t.Fatalf("CreateMessagesStream expect error, but not")
+	}
+
+	t.Logf("CreateMessagesStream error: %s", err)
+}
