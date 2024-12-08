@@ -41,9 +41,10 @@ const (
 )
 
 type MessagesRequest struct {
-	Model     Model     `json:"model"`
-	Messages  []Message `json:"messages"`
-	MaxTokens int       `json:"max_tokens,omitempty"`
+	Model            Model     `json:"model,omitempty"`
+	AnthropicVersion string    `json:"anthropic_version,omitempty"`
+	Messages         []Message `json:"messages"`
+	MaxTokens        int       `json:"max_tokens,omitempty"`
 
 	System        string              `json:"-"`
 	MultiSystem   []MessageSystemPart `json:"-"`
@@ -76,6 +77,17 @@ func (m MessagesRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aux)
 }
 
+var _ VertexAISupport = (*MessagesRequest)(nil)
+
+func (m MessagesRequest) GetModel() Model {
+	return m.Model
+}
+
+func (m *MessagesRequest) SetAnthropicVersion(version APIVersion) {
+	m.AnthropicVersion = string(version)
+	m.Model = ""
+}
+
 func (m *MessagesRequest) SetTemperature(t float32) {
 	m.Temperature = &t
 }
@@ -86,6 +98,10 @@ func (m *MessagesRequest) SetTopP(p float32) {
 
 func (m *MessagesRequest) SetTopK(k int) {
 	m.TopK = &k
+}
+
+func (m *MessagesRequest) IsStreaming() bool {
+	return m.Stream
 }
 
 type MessageSystemPart struct {
@@ -375,7 +391,8 @@ func (c *Client) CreateMessages(
 	}
 
 	urlSuffix := "/messages"
-	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, request, setters...)
+
+	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, &request, setters...)
 	if err != nil {
 		return
 	}
