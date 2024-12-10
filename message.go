@@ -381,6 +381,30 @@ type ToolDefinition struct {
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
+func NewComputerUseToolDefinition(name string, displayWidthPx int, displayHeightPx int, displayNumber *int) ToolDefinition {
+	return ToolDefinition{
+		Type:            "computer_20241022",
+		Name:            name,
+		DisplayWidthPx:  displayWidthPx,
+		DisplayHeightPx: displayHeightPx,
+		DisplayNumber:   displayNumber,
+	}
+}
+
+func NewTextEditorToolDefinition(name string) ToolDefinition {
+	return ToolDefinition{
+		Type: "text_editor_20241022",
+		Name: name,
+	}
+}
+
+func NewBashToolDefinition(name string) ToolDefinition {
+	return ToolDefinition{
+		Type: "bash_20241022",
+		Name: name,
+	}
+}
+
 type ToolChoice struct {
 	// oneof: auto(default) any tool
 	Type string `json:"type"`
