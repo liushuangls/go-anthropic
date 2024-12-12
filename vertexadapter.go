@@ -12,7 +12,11 @@ type VertexAdapter struct {
 }
 
 func (v *VertexAdapter) TranslateError(resp *http.Response, body []byte) (error, bool) {
-	if resp.StatusCode == 401 || resp.StatusCode == 404 || resp.StatusCode == 429 {
+	switch resp.StatusCode {
+	case http.StatusUnauthorized,
+		http.StatusForbidden,
+		http.StatusNotFound,
+		http.StatusTooManyRequests:
 		var errRes VertexAIErrorResponse
 		err := json.Unmarshal(body, &errRes)
 		if err != nil {
@@ -38,7 +42,6 @@ func (v *VertexAdapter) TranslateError(resp *http.Response, body []byte) (error,
 			errRes.Error,
 		), true
 	}
-
 	return nil, false
 }
 
