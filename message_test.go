@@ -5,6 +5,7 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -751,6 +752,189 @@ func TestUsageHeaders(t *testing.T) {
 	if usage.CacheReadInputTokens != 0 {
 		t.Fatalf("CacheReadInputTokens mismatch. got %d, want 0", usage.CacheReadInputTokens)
 	}
+}
+
+func TestVertexMessages(t *testing.T) {
+	project := "project"
+	location := "location"
+	model := anthropic.ModelClaude3Haiku20240307
+	vertexModel := "claude-3-haiku@20240307"
+
+	baseEndpoint := fmt.Sprintf(
+		"/v1/projects/%s/locations/%s/publishers/anthropic/models",
+		project,
+		location,
+	)
+
+	server := test.NewTestServer()
+	server.RegisterHandler(
+		baseEndpoint+"/"+vertexModel+":rawPredict",
+		handleMessagesEndpoint(rateLimitHeaders),
+	)
+
+	ts := server.VertexTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + baseEndpoint
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithVertexAI(project, location),
+		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithEmptyMessagesLimit(100),
+		anthropic.WithHTTPClient(http.DefaultClient),
+	)
+
+	t.Run("create messages success", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: model,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+	t.Run("create messages success with single system message", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: model,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+			System:    "test system message",
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+	t.Run("create messages success with single multi-system message", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: model,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens:   1000,
+			MultiSystem: anthropic.NewMultiSystemMessages("test single multi-system message"),
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+	t.Run("create messages success with multi-system messages", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: model,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+			MultiSystem: anthropic.NewMultiSystemMessages(
+				"test multi-system messages",
+				"here",
+				"are",
+				"some",
+				"more",
+				"messages",
+				"for",
+				"testing",
+			),
+		})
+		if err != nil {
+			t.Fatalf("CreateMessages error: %v", err)
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
+
+}
+
+func TestVertexUnauthorized(t *testing.T) {
+	project := "project"
+	location := "location"
+	model := anthropic.ModelClaude3Haiku20240307
+	vertexModel := "claude-3-haiku@20240307"
+
+	baseEndpoint := fmt.Sprintf(
+		"/v1/projects/%s/locations/%s/publishers/anthropic/models",
+		project,
+		location,
+	)
+
+	server := test.NewTestServer()
+	server.RegisterHandler(
+		baseEndpoint+"/"+vertexModel+":rawPredict",
+		handleMessagesEndpoint(rateLimitHeaders),
+	)
+
+	ts := server.VertexTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + baseEndpoint
+	client := anthropic.NewClient(
+		"wrong-token",
+		anthropic.WithVertexAI(project, location),
+		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithEmptyMessagesLimit(100),
+		anthropic.WithHTTPClient(http.DefaultClient),
+	)
+
+	t.Run("create messages auth error", func(t *testing.T) {
+		resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+			Model: model,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		})
+		if err == nil {
+			t.Fatalf("CreateMessages expected error: %v", err)
+		}
+
+		if respErr, ok := err.(*anthropic.RequestError); ok {
+			if respErr.StatusCode != http.StatusUnauthorized {
+				t.Fatalf(
+					"CreateMessages expected status code %d, got %d",
+					http.StatusUnauthorized,
+					respErr.StatusCode,
+				)
+			}
+
+			// // get the []VertexAIErrorResponse
+			// var errs []anthropic.VertexAIErrorResponse
+			// if respErr.Err != nil {
+			// 	if (vErr, ok:= respErr.Err.(*anthropic.VertexAIError); ok {
+			// }
+			// if respErr. != "Unauthorized" {
+			// 	t.Fatalf("CreateMessages expected message 'Unauthorized', got %s", respErr.Message)
+			// }
+		} else {
+			ve := &anthropic.VertexAPIError{}
+			if !errors.As(err, &ve) {
+				t.Fatalf("CreateMessages expected VertexAIError, got %v", err)
+			}
+
+			if ve.Code != http.StatusUnauthorized {
+				t.Fatalf("CreateMessages expected status code %d, got %d", http.StatusUnauthorized, ve.Code)
+			}
+			if ve.Message != "Unauthorized" {
+				t.Fatalf("CreateMessages expected message 'Unauthorized', got %s", ve.Message)
+			}
+		}
+
+		t.Logf("CreateMessages resp: %+v", resp)
+	})
 }
 
 func getRespWithHeaders(headers map[string]string) (anthropic.MessagesResponse, error) {
