@@ -13,10 +13,9 @@ This package has support for:
 - Messages
 - Streaming Messages
 - Message Batching
-- Vision
-- Tool use ([computer use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use))
+- Vision and PDFs
+- Tool use (with [computer use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use))
 - Prompt Caching
-- PDF
 - Token Counting
 
 ## Installation
@@ -165,7 +164,6 @@ func main() {
 </details>
 
 <details>
-
 <summary>Messages Tool use example</summary>
 
 ```go
@@ -317,6 +315,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
 	"github.com/liushuangls/go-anthropic/v2"
 	"golang.org/x/oauth2/google"
 )
@@ -371,7 +370,6 @@ func main() {
 ```
 </details>
 
-
 <details>
 <summary>Message Batching</summary>
 
@@ -385,6 +383,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
 	"github.com/liushuangls/go-anthropic/v2"
 )
 
@@ -474,22 +473,36 @@ func main() {
 ```
 </details>
 
+<details>
+<summary>Token Counting example</summary>
+
+doc: (https://docs.anthropic.com/en/docs/build-with-claude/token-counting)[https://docs.anthropic.com/en/docs/build-with-claude/token-counting]
+
+```go
+// TODO: add example!
+```
+
+</details>
+
 ### Beta features
 Anthropic provides several beta features that can be enabled using the following beta version identifiers:
 
 Beta Version Identifier            | Code Constant                   | Description
------------------------------------|---------------------------------|-------------
+-----------------------------------|---------------------------------|---------------------------------
 `tools-2024-04-04`                 | `BetaTools20240404`             | Initial tools beta
 `tools-2024-05-16`                 | `BetaTools20240516`             | Updated tools beta
 `prompt-caching-2024-07-31`        | `BetaPromptCaching20240731`     | Prompt caching beta
 `message-batches-2024-09-24`       | `BetaMessageBatches20240924`    | Message batching beta
+`token-counting-2024-11-01`        | `BetaTokenCounting20241101`     | Token counting beta
 `max-tokens-3-5-sonnet-2024-07-15` | `BetaMaxTokens35Sonnet20240715` | Max tokens beta for Sonnet model
-// uh oh. I'm missing some
+`computer-use-2024-10-22`          | `BetaComputerUse20241022`       | Computer use beta
 
 ### Supported models
+The following models are supported by go-anthropic.
+These models are also available for use on Google's Vertex AI platform as well.
+
 Model Name                     | Model String
--------------------------------|-----------------------------------
-ModelClaudeInstant1Dot2        | "claude-instant-1.2"
+-------------------------------|------------------------------
 ModelClaude2Dot0               | "claude-2.0"
 ModelClaude2Dot1               | "claude-2.1"
 ModelClaude3Opus20240229       | "claude-3-opus-20240229"
@@ -498,7 +511,8 @@ ModelClaude3Dot5Sonnet20240620 | "claude-3-5-sonnet-20240620"
 ModelClaude3Dot5Sonnet20241022 | "claude-3-5-sonnet-20241022"
 ModelClaude3Dot5SonnetLatest   | "claude-3-5-sonnet-latest"
 ModelClaude3Haiku20240307      | "claude-3-haiku-20240307"
-// uh oh. I'm missing some
+ModelClaude3Dot5HaikuLatest    | "claude-3-5-haiku-latest"
+ModelClaude3Dot5Haiku20241022  | "claude-3-5-haiku-20241022"
 
 ### Other Enums
 Two exported enums are additionally provided:
@@ -509,3 +523,8 @@ Two exported enums are additionally provided:
 The following project had particular influence on go-anthropic's design.
 
 - [sashabaranov/go-openai](https://github.com/sashabaranov/go-openai)
+
+Additionally, we thank anthropic for providing the API and documentation.
+
+## License
+go-anthropic is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full license text.
