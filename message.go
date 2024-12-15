@@ -22,6 +22,7 @@ const (
 	MessagesContentTypeToolResult     MessagesContentType = "tool_result"
 	MessagesContentTypeToolUse        MessagesContentType = "tool_use"
 	MessagesContentTypeInputJsonDelta MessagesContentType = "input_json_delta"
+	MessagesContentTypeDocument       MessagesContentType = "document"
 )
 
 type MessagesStopReason string
@@ -33,10 +34,17 @@ const (
 	MessagesStopReasonToolUse      MessagesStopReason = "tool_use"
 )
 
+type MessagesContentSourceType string
+
+const (
+	MessagesContentSourceTypeBase64 = "base64"
+)
+
 type MessagesRequest struct {
-	Model     Model     `json:"model"`
-	Messages  []Message `json:"messages"`
-	MaxTokens int       `json:"max_tokens"`
+	Model            Model     `json:"model,omitempty"`
+	AnthropicVersion string    `json:"anthropic_version,omitempty"`
+	Messages         []Message `json:"messages"`
+	MaxTokens        int       `json:"max_tokens,omitempty"`
 
 	System        string              `json:"-"`
 	MultiSystem   []MessageSystemPart `json:"-"`
@@ -69,6 +77,17 @@ func (m MessagesRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aux)
 }
 
+var _ VertexAISupport = (*MessagesRequest)(nil)
+
+func (m MessagesRequest) GetModel() Model {
+	return m.Model
+}
+
+func (m *MessagesRequest) SetAnthropicVersion(version APIVersion) {
+	m.AnthropicVersion = string(version)
+	m.Model = ""
+}
+
 func (m *MessagesRequest) SetTemperature(t float32) {
 	m.Temperature = &t
 }
@@ -79,6 +98,10 @@ func (m *MessagesRequest) SetTopP(p float32) {
 
 func (m *MessagesRequest) SetTopK(k int) {
 	m.TopK = &k
+}
+
+func (m *MessagesRequest) IsStreaming() bool {
+	return m.Stream
 }
 
 type MessageSystemPart struct {
@@ -150,7 +173,7 @@ type MessageContent struct {
 
 	Text *string `json:"text,omitempty"`
 
-	Source *MessageContentImageSource `json:"source,omitempty"`
+	Source *MessageContentSource `json:"source,omitempty"`
 
 	*MessageContentToolResult
 
@@ -168,9 +191,16 @@ func NewTextMessageContent(text string) MessageContent {
 	}
 }
 
-func NewImageMessageContent(source MessageContentImageSource) MessageContent {
+func NewImageMessageContent(source MessageContentSource) MessageContent {
 	return MessageContent{
 		Type:   MessagesContentTypeImage,
+		Source: &source,
+	}
+}
+
+func NewDocumentMessageContent(source MessageContentSource) MessageContent {
+	return MessageContent{
+		Type:   MessagesContentTypeDocument,
 		Source: &source,
 	}
 }
@@ -260,18 +290,19 @@ func NewMessageContentToolResult(
 	}
 }
 
-type MessageContentImageSource struct {
-	Type      string `json:"type"`
-	MediaType string `json:"media_type"`
-	Data      any    `json:"data"`
+type MessageContentSource struct {
+	Type      MessagesContentSourceType `json:"type"`
+	MediaType string                    `json:"media_type"`
+	Data      any                       `json:"data"`
 }
 
-func NewMessageContentImageSource(
-	imageSourceType, mediaType string,
+func NewMessageContentSource(
+	sourceType MessagesContentSourceType,
+	mediaType string,
 	data any,
-) MessageContentImageSource {
-	return MessageContentImageSource{
-		Type:      imageSourceType,
+) MessageContentSource {
+	return MessageContentSource{
+		Type:      sourceType,
 		MediaType: mediaType,
 		Data:      data,
 	}
@@ -360,7 +391,8 @@ func (c *Client) CreateMessages(
 	}
 
 	urlSuffix := "/messages"
-	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, request, setters...)
+
+	req, err := c.newRequest(ctx, http.MethodPost, urlSuffix, &request, setters...)
 	if err != nil {
 		return
 	}

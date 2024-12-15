@@ -63,4 +63,25 @@ func TestIntegrationMessages(t *testing.T) {
 			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
 		})
 	})
+
+	t.Run("CreateMessages on real API with claude-3-5-haiku", func(t *testing.T) {
+		newClient := anthropic.NewClient(APIKey)
+		req := request
+		req.Model = anthropic.ModelClaude3Dot5Haiku20241022
+
+		resp, err := newClient.CreateMessages(ctx, req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
+		t.Logf("CreateMessages resp: %+v", resp)
+		t.Logf("CreteMessages resp content: %s", resp.GetFirstContentText())
+
+		t.Run("RateLimitHeaders are present", func(t *testing.T) {
+			rateLimHeader, err := resp.GetRateLimitHeaders()
+			if err != nil {
+				t.Fatalf("GetRateLimitHeaders error: %s", err)
+			}
+			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
+		})
+	})
 }

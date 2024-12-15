@@ -1,6 +1,7 @@
 package anthropic
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -12,23 +13,27 @@ const (
 type APIVersion string
 
 const (
-	APIVersion20230601 APIVersion = "2023-06-01"
+	APIVersion20230601       APIVersion = "2023-06-01"
+	APIVersionVertex20231016 APIVersion = "vertex-2023-10-16"
 )
 
 type BetaVersion string
 
 const (
-	BetaTools20240404          BetaVersion = "tools-2024-04-04"
-	BetaTools20240516          BetaVersion = "tools-2024-05-16"
-	BetaPromptCaching20240731  BetaVersion = "prompt-caching-2024-07-31"
-	BetaMessageBatches20240924 BetaVersion = "message-batches-2024-09-24"
-
+	BetaTools20240404             BetaVersion = "tools-2024-04-04"
+	BetaTools20240516             BetaVersion = "tools-2024-05-16"
+	BetaPromptCaching20240731     BetaVersion = "prompt-caching-2024-07-31"
+	BetaMessageBatches20240924    BetaVersion = "message-batches-2024-09-24"
+	BetaTokenCounting20241101     BetaVersion = "token-counting-2024-11-01"
 	BetaMaxTokens35Sonnet20240715 BetaVersion = "max-tokens-3-5-sonnet-2024-07-15"
 )
 
+type ApiKeyFunc func() string
+
 // ClientConfig is a configuration of a client.
 type ClientConfig struct {
-	apiKey string
+	apiKeyFunc ApiKeyFunc
+	apiKey     string
 
 	BaseURL     string
 	APIVersion  APIVersion
@@ -36,6 +41,8 @@ type ClientConfig struct {
 	HTTPClient  *http.Client
 
 	EmptyMessagesLimit uint
+
+	Adapter ClientAdapter
 }
 
 type ClientOption func(c *ClientConfig)
@@ -49,6 +56,7 @@ func newConfig(apiKey string, opts ...ClientOption) ClientConfig {
 		HTTPClient: &http.Client{},
 
 		EmptyMessagesLimit: defaultEmptyMessagesLimit,
+		Adapter:            &DefaultAdapter{},
 	}
 
 	for _, opt := range opts {
@@ -56,6 +64,13 @@ func newConfig(apiKey string, opts ...ClientOption) ClientConfig {
 	}
 
 	return c
+}
+
+func (c *ClientConfig) GetApiKey() string {
+	if c.apiKeyFunc != nil {
+		return c.apiKeyFunc()
+	}
+	return c.apiKey
 }
 
 func WithBaseURL(baseUrl string) ClientOption {
@@ -85,5 +100,24 @@ func WithEmptyMessagesLimit(limit uint) ClientOption {
 func WithBetaVersion(betaVersion ...BetaVersion) ClientOption {
 	return func(c *ClientConfig) {
 		c.BetaVersion = betaVersion
+	}
+}
+
+func WithVertexAI(projectID string, location string) ClientOption {
+	return func(c *ClientConfig) {
+		c.BaseURL = fmt.Sprintf(
+			"https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/anthropic/models",
+			location,
+			projectID,
+			location,
+		)
+		c.APIVersion = APIVersionVertex20231016
+		c.Adapter = &VertexAdapter{}
+	}
+}
+
+func WithApiKeyFunc(apiKeyFunc ApiKeyFunc) ClientOption {
+	return func(c *ClientConfig) {
+		c.apiKeyFunc = apiKeyFunc
 	}
 }

@@ -16,6 +16,8 @@ This package has support for:
 - Vision
 - Tool use ([computer use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use))
 - Prompt Caching
+- PDF
+- Token Counting
 
 ## Installation
 
@@ -42,7 +44,7 @@ import (
 func main() {
 	client := anthropic.NewClient("your anthropic api key")
 	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-		Model: anthropic.ModelClaudeInstant1Dot2,
+		Model: anthropic.ModelClaude3Haiku20240307,
 		Messages: []anthropic.Message{
 			anthropic.NewUserTextMessage("What is your name?"),
 		},
@@ -77,7 +79,7 @@ func main() {
 	client := anthropic.NewClient("your anthropic api key")
 	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
-			Model: anthropic.ModelClaudeInstant1Dot2,
+			Model: anthropic.ModelClaude3Haiku20240307,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
@@ -135,11 +137,13 @@ func main() {
 			{
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
-					anthropic.NewImageMessageContent(anthropic.MessageContentImageSource{
-						Type:      "base64",
-						MediaType: imageMediaType,
-						Data:      imageData,
-					}),
+					anthropic.NewImageMessageContent(
+						anthropic.NewMessageContentSource(
+							anthropic.MessagesContentSourceTypeBase64,
+							imageMediaType,
+							imageData,
+						),
+					),
 					anthropic.NewTextMessageContent("Describe this image."),
 				},
 			},
@@ -155,7 +159,7 @@ func main() {
 		}
 		return
 	}
-	fmt.Println(resp.Content[0].Text)
+	fmt.Println(*resp.Content[0].GetText())
 }
 ```
 </details>
@@ -302,6 +306,73 @@ func main() {
 </details>
 
 <details>
+<summary>VertexAI example</summary>
+If you are using a Google Credentials file, you can use the following code to create a client:
+
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"github.com/liushuangls/go-anthropic/v2"
+	"golang.org/x/oauth2/google"
+)
+
+func main() {
+		credBytes, err := os.ReadFile("<path to your credentials file>")
+		if err != nil {
+			fmt.Println("Error reading file")
+			return
+		}
+
+		ts, err := google.JWTAccessTokenSourceWithScope(credBytes, "https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/cloud-platform.read-only")
+		if err != nil {
+			fmt.Println("Error creating token source")
+			return
+		}
+
+		// use JWTAccessTokenSourceWithScope
+		token, err := ts.Token()
+		if err != nil {
+			fmt.Println("Error getting token")
+			return
+		}
+
+		fmt.Println(token.AccessToken)
+
+		client := anthropic.NewClient(token.AccessToken, anthropic.WithVertexAI("<YOUR PROJECTID>", "<YOUR LOCATION>"))
+
+		resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+			MessagesRequest: anthropic.MessagesRequest{
+				Model: anthropic.ModelClaude3Haiku20240307,
+				Messages: []anthropic.Message{
+					anthropic.NewUserTextMessage("What is your name?"),
+				},
+				MaxTokens: 1000,
+			},
+			OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
+				fmt.Printf("Stream Content: %s\n", *data.Delta.Text)
+			},
+		})
+		if err != nil {
+			var e *anthropic.APIError
+			if errors.As(err, &e) {
+				fmt.Printf("Messages stream error, type: %s, message: %s", e.Type, e.Message)
+			} else {
+				fmt.Printf("Messages stream error: %v\n", err)
+			}
+			return
+		}
+		fmt.Println(resp.Content[0].GetText())
+}
+```
+</details>
+
+
+<details>
 <summary>Message Batching</summary>
 
 doc: https://docs.anthropic.com/en/docs/build-with-claude/message-batches
@@ -313,7 +384,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
+	"os"
 	"github.com/liushuangls/go-anthropic/v2"
 )
 
@@ -403,7 +474,7 @@ func main() {
 ```
 </details>
 
-## Beta features
+### Beta features
 Anthropic provides several beta features that can be enabled using the following beta version identifiers:
 
 Beta Version Identifier            | Code Constant                   | Description
@@ -415,7 +486,7 @@ Beta Version Identifier            | Code Constant                   | Descripti
 `max-tokens-3-5-sonnet-2024-07-15` | `BetaMaxTokens35Sonnet20240715` | Max tokens beta for Sonnet model
 // uh oh. I'm missing some
 
-## Supported models
+### Supported models
 Model Name                     | Model String
 -------------------------------|-----------------------------------
 ModelClaudeInstant1Dot2        | "claude-instant-1.2"
@@ -429,7 +500,7 @@ ModelClaude3Dot5SonnetLatest   | "claude-3-5-sonnet-latest"
 ModelClaude3Haiku20240307      | "claude-3-haiku-20240307"
 // uh oh. I'm missing some
 
-## Other Enums
+### Other Enums
 Two exported enums are additionally provided:
 - `RoleUser` = "user": Input role type for user messages
 - `RoleAssistant` = "assistant": Input role type for assistant/Claude messages

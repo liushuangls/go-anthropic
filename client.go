@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -59,22 +60,30 @@ func (c *Client) sendRequest(req *http.Request, v Response) error {
 
 func (c *Client) handlerRequestError(resp *http.Response) error {
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("error, reading response body: %w", err)
+		}
+
+		// use the adapter to translate the error, if it can
+		if err, handled := c.config.Adapter.TranslateError(resp, body); handled {
+			return err
+		}
+
 		var errRes ErrorResponse
-		err := json.NewDecoder(resp.Body).Decode(&errRes)
+		err = json.Unmarshal(body, &errRes)
 		if err != nil || errRes.Error == nil {
 			reqErr := RequestError{
 				StatusCode: resp.StatusCode,
 				Err:        err,
+				Body:       body,
 			}
 			return &reqErr
 		}
+
 		return fmt.Errorf("error, status code: %d, message: %w", resp.StatusCode, errRes.Error)
 	}
 	return nil
-}
-
-func (c *Client) fullURL(suffix string) string {
-	return fmt.Sprintf("%s%s", c.config.BaseURL, suffix)
 }
 
 type requestSetter func(req *http.Request)
@@ -99,6 +108,14 @@ func (c *Client) newRequest(
 	body any,
 	requestSetters ...requestSetter,
 ) (req *http.Request, err error) {
+
+	// prepare the request
+	var fullURL string
+	fullURL, err = c.config.Adapter.PrepareRequest(c, method, urlSuffix, body)
+	if err != nil {
+		return nil, err
+	}
+
 	var reqBody []byte
 	if body != nil {
 		reqBody, err = json.Marshal(body)
@@ -110,7 +127,7 @@ func (c *Client) newRequest(
 	req, err = http.NewRequestWithContext(
 		ctx,
 		method,
-		c.fullURL(urlSuffix),
+		fullURL,
 		bytes.NewBuffer(reqBody),
 	)
 	if err != nil {
@@ -119,8 +136,9 @@ func (c *Client) newRequest(
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Accept", "application/json; charset=utf-8")
-	req.Header.Set("X-Api-Key", c.config.apiKey)
-	req.Header.Set("Anthropic-Version", string(c.config.APIVersion))
+
+	// set any provider-specific headers (including Authorization)
+	c.config.Adapter.SetRequestHeaders(c, req)
 
 	for _, setter := range requestSetters {
 		setter(req)

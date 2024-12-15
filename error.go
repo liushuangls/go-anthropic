@@ -72,6 +72,7 @@ func (e *APIError) IsOverloadedErr() bool {
 type RequestError struct {
 	StatusCode int
 	Err        error
+	Body       []byte
 }
 
 type ErrorResponse struct {
@@ -84,5 +85,10 @@ func (e *APIError) Error() string {
 }
 
 func (e *RequestError) Error() string {
-	return fmt.Sprintf("anthropic request error status code: %d, err: %s", e.StatusCode, e.Err)
+	return fmt.Sprintf(
+		"anthropic request error status code: %d, err: %s, body: %s",
+		e.StatusCode,
+		e.Err,
+		e.Body,
+	)
 }
