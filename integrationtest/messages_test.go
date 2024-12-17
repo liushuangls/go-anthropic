@@ -85,3 +85,31 @@ func TestIntegrationMessages(t *testing.T) {
 		})
 	})
 }
+
+func TestComputerUse(t *testing.T) {
+	testAPIKey(t)
+	client := anthropic.NewClient(APIKey, anthropic.WithBetaVersion(anthropic.BetaComputerUse20241022))
+	ctx := context.Background()
+	var temperature float32 = 0.0
+
+	req := anthropic.MessagesRequest{
+		Model:     anthropic.ModelClaude3Dot5SonnetLatest,
+		MaxTokens: 4096,
+		Messages: []anthropic.Message{
+			anthropic.NewUserTextMessage("use chrome to google today's weather"),
+		},
+		Tools: []anthropic.ToolDefinition{
+			anthropic.NewComputerUseToolDefinition("computer", 1024, 768, nil),
+		},
+		Temperature: &temperature,
+	}
+
+	t.Run("CreateMessages on real API with computer use", func(t *testing.T) {
+		resp, err := client.CreateMessages(ctx, req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
+		t.Logf("CreateMessages resp: %+v", resp)
+		t.Logf("CreateMessages resp content: %s", resp.GetFirstContentText())
+	})
+}

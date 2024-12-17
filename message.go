@@ -368,9 +368,41 @@ type ToolDefinition struct {
 	// or you can pass in a struct which serializes to the proper JSON schema.
 	// The jsonschema package is provided for convenience, but you should
 	// consider another specialized library if you require more complex schemas.
-	InputSchema any `json:"input_schema"`
+	InputSchema any `json:"input_schema,omitempty"`
+	// Type is required for Anthropic defined tools.
+	Type string `json:"type,omitempty"`
+	// DisplayWidthPx is a required parameter of the Computer Use tool.
+	DisplayWidthPx int `json:"display_width_px,omitempty"`
+	// DisplayHeightPx is a required parameter of the Computer Use tool.
+	DisplayHeightPx int `json:"display_height_px,omitempty"`
+	// DisplayNumber is an optional parameter of the Computer Use tool.
+	DisplayNumber *int `json:"display_number,omitempty"`
 
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
+}
+
+func NewComputerUseToolDefinition(name string, displayWidthPx int, displayHeightPx int, displayNumber *int) ToolDefinition {
+	return ToolDefinition{
+		Type:            "computer_20241022",
+		Name:            name,
+		DisplayWidthPx:  displayWidthPx,
+		DisplayHeightPx: displayHeightPx,
+		DisplayNumber:   displayNumber,
+	}
+}
+
+func NewTextEditorToolDefinition(name string) ToolDefinition {
+	return ToolDefinition{
+		Type: "text_editor_20241022",
+		Name: name,
+	}
+}
+
+func NewBashToolDefinition(name string) ToolDefinition {
+	return ToolDefinition{
+		Type: "bash_20241022",
+		Name: name,
+	}
 }
 
 type ToolChoice struct {
