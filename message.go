@@ -369,6 +369,9 @@ type ToolDefinition struct {
 	// The jsonschema package is provided for convenience, but you should
 	// consider another specialized library if you require more complex schemas.
 	InputSchema any `json:"input_schema,omitempty"`
+
+	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
+
 	// Type is required for Anthropic defined tools.
 	Type string `json:"type,omitempty"`
 	// DisplayWidthPx is a required parameter of the Computer Use tool.
@@ -377,11 +380,14 @@ type ToolDefinition struct {
 	DisplayHeightPx int `json:"display_height_px,omitempty"`
 	// DisplayNumber is an optional parameter of the Computer Use tool.
 	DisplayNumber *int `json:"display_number,omitempty"`
-
-	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
-func NewComputerUseToolDefinition(name string, displayWidthPx int, displayHeightPx int, displayNumber *int) ToolDefinition {
+func NewComputerUseToolDefinition(
+	name string,
+	displayWidthPx int,
+	displayHeightPx int,
+	displayNumber *int,
+) ToolDefinition {
 	return ToolDefinition{
 		Type:            "computer_20241022",
 		Name:            name,

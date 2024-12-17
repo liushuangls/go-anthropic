@@ -88,7 +88,10 @@ func TestIntegrationMessages(t *testing.T) {
 
 func TestComputerUse(t *testing.T) {
 	testAPIKey(t)
-	client := anthropic.NewClient(APIKey, anthropic.WithBetaVersion(anthropic.BetaComputerUse20241022))
+	client := anthropic.NewClient(
+		APIKey,
+		anthropic.WithBetaVersion(anthropic.BetaComputerUse20241022),
+	)
 	ctx := context.Background()
 	var temperature float32 = 0.0
 
