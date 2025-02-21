@@ -309,15 +309,18 @@ func NewMessageContentSource(
 }
 
 type MessageContentToolUse struct {
-	ID    string          `json:"id,omitempty"`
-	Name  string          `json:"name,omitempty"`
-	Input json.RawMessage `json:"input,omitempty"`
+	ID    string          `json:"id"`
+	Name  string          `json:"name"`
+	Input json.RawMessage `json:"input"`
 }
 
 func NewMessageContentToolUse(
 	toolUseId, name string,
 	input json.RawMessage,
 ) *MessageContentToolUse {
+	if input == nil {
+		input = json.RawMessage("{}")
+	}
 	return &MessageContentToolUse{
 		ID:    toolUseId,
 		Name:  name,
