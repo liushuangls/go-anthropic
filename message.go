@@ -24,6 +24,8 @@ const (
 	MessagesContentTypeInputJsonDelta   MessagesContentType = "input_json_delta"
 	MessagesContentTypeDocument         MessagesContentType = "document"
 	MessagesContentTypeThinking         MessagesContentType = "thinking"
+	MessagesContentTypeThinkingDelta    MessagesContentType = "thinking_delta"
+	MessagesContentTypeSignatureDelta   MessagesContentType = "signature_delta"
 	MessagesContentTypeRedactedThinking MessagesContentType = "redacted_thinking"
 )
 
@@ -278,6 +280,15 @@ func (m *MessageContent) MergeContentDelta(mc MessageContent) {
 			m.PartialJson = mc.PartialJson
 		} else {
 			*m.PartialJson += *mc.PartialJson
+		}
+	case MessagesContentTypeThinking, MessagesContentTypeThinkingDelta, MessagesContentTypeSignatureDelta:
+		if m.MessageContentThinking == nil {
+			m.MessageContentThinking = mc.MessageContentThinking
+		} else {
+			m.MessageContentThinking.Thinking += mc.MessageContentThinking.Thinking
+			if mc.MessageContentThinking.Signature != "" {
+				m.MessageContentThinking.Signature = mc.MessageContentThinking.Signature
+			}
 		}
 	}
 }
