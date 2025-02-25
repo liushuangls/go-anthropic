@@ -27,6 +27,7 @@ const (
 	BetaTokenCounting20241101     BetaVersion = "token-counting-2024-11-01"
 	BetaMaxTokens35Sonnet20240715 BetaVersion = "max-tokens-3-5-sonnet-2024-07-15"
 	BetaComputerUse20241022       BetaVersion = "computer-use-2024-10-22"
+	BetaOutput128k20250219        BetaVersion = "output-128k-2025-02-19"
 )
 
 type ApiKeyFunc func() string

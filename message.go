@@ -16,13 +16,17 @@ const (
 type MessagesContentType string
 
 const (
-	MessagesContentTypeText           MessagesContentType = "text"
-	MessagesContentTypeTextDelta      MessagesContentType = "text_delta"
-	MessagesContentTypeImage          MessagesContentType = "image"
-	MessagesContentTypeToolResult     MessagesContentType = "tool_result"
-	MessagesContentTypeToolUse        MessagesContentType = "tool_use"
-	MessagesContentTypeInputJsonDelta MessagesContentType = "input_json_delta"
-	MessagesContentTypeDocument       MessagesContentType = "document"
+	MessagesContentTypeText             MessagesContentType = "text"
+	MessagesContentTypeTextDelta        MessagesContentType = "text_delta"
+	MessagesContentTypeImage            MessagesContentType = "image"
+	MessagesContentTypeToolResult       MessagesContentType = "tool_result"
+	MessagesContentTypeToolUse          MessagesContentType = "tool_use"
+	MessagesContentTypeInputJsonDelta   MessagesContentType = "input_json_delta"
+	MessagesContentTypeDocument         MessagesContentType = "document"
+	MessagesContentTypeThinking         MessagesContentType = "thinking"
+	MessagesContentTypeThinkingDelta    MessagesContentType = "thinking_delta"
+	MessagesContentTypeSignatureDelta   MessagesContentType = "signature_delta"
+	MessagesContentTypeRedactedThinking MessagesContentType = "redacted_thinking"
 )
 
 type MessagesStopReason string
@@ -38,6 +42,13 @@ type MessagesContentSourceType string
 
 const (
 	MessagesContentSourceTypeBase64 = "base64"
+)
+
+type ThinkingType string
+
+const (
+	ThinkingTypeEnabled  ThinkingType = "enabled"
+	ThinkingTypeDisabled ThinkingType = "disabled"
 )
 
 type MessagesRequest struct {
@@ -56,6 +67,7 @@ type MessagesRequest struct {
 	TopK          *int                `json:"top_k,omitempty"`
 	Tools         []ToolDefinition    `json:"tools,omitempty"`
 	ToolChoice    *ToolChoice         `json:"tool_choice,omitempty"`
+	Thinking      *Thinking           `json:"thinking,omitempty"`
 }
 
 func (m MessagesRequest) MarshalJSON() ([]byte, error) {
@@ -182,6 +194,10 @@ type MessageContent struct {
 	PartialJson *string `json:"partial_json,omitempty"`
 
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
+
+	*MessageContentThinking
+
+	*MessageContentRedactedThinking
 }
 
 func NewTextMessageContent(text string) MessageContent {
@@ -265,6 +281,17 @@ func (m *MessageContent) MergeContentDelta(mc MessageContent) {
 		} else {
 			*m.PartialJson += *mc.PartialJson
 		}
+	case MessagesContentTypeThinking,
+		MessagesContentTypeThinkingDelta,
+		MessagesContentTypeSignatureDelta:
+		if m.MessageContentThinking == nil {
+			m.MessageContentThinking = mc.MessageContentThinking
+		} else {
+			m.MessageContentThinking.Thinking += mc.MessageContentThinking.Thinking
+			if mc.MessageContentThinking.Signature != "" {
+				m.MessageContentThinking.Signature = mc.MessageContentThinking.Signature
+			}
+		}
 	}
 }
 
@@ -327,6 +354,15 @@ func NewMessageContentToolUse(
 
 func (c *MessageContentToolUse) UnmarshalInput(v any) error {
 	return json.Unmarshal(c.Input, v)
+}
+
+type MessageContentThinking struct {
+	Thinking  string `json:"thinking,omitempty"`
+	Signature string `json:"signature,omitempty"`
+}
+
+type MessageContentRedactedThinking struct {
+	Data string `json:"data,omitempty"`
 }
 
 type MessagesResponse struct {
@@ -415,6 +451,13 @@ type ToolChoice struct {
 	// oneof: auto(default) any tool
 	Type string `json:"type"`
 	Name string `json:"name,omitempty"`
+}
+
+type Thinking struct {
+	Type ThinkingType `json:"type"`
+	// Determines how many tokens Claude can use for its internal reasoning process. Larger budgets can enable more thorough analysis for complex problems, improving response quality.
+	// Must be ≥1024 and less than max_tokens.
+	BudgetTokens int `json:"budget_tokens"`
 }
 
 func (c *Client) CreateMessages(
