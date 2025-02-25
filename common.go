@@ -34,6 +34,8 @@ func (m Model) asVertexModel() string {
 		return "claude-3-5-sonnet@20240620"
 	case ModelClaude3Dot5Sonnet20241022:
 		return "claude-3-5-sonnet-v2@20241022"
+	case ModelClaude3Dot7Sonnet20250219:
+		return "claude-3-7-sonnet@20250219"
 	case ModelClaude3Haiku20240307:
 		return "claude-3-haiku@20240307"
 	case ModelClaude3Dot5Haiku20241022:
