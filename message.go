@@ -281,7 +281,9 @@ func (m *MessageContent) MergeContentDelta(mc MessageContent) {
 		} else {
 			*m.PartialJson += *mc.PartialJson
 		}
-	case MessagesContentTypeThinking, MessagesContentTypeThinkingDelta, MessagesContentTypeSignatureDelta:
+	case MessagesContentTypeThinking,
+		MessagesContentTypeThinkingDelta,
+		MessagesContentTypeSignatureDelta:
 		if m.MessageContentThinking == nil {
 			m.MessageContentThinking = mc.MessageContentThinking
 		} else {
