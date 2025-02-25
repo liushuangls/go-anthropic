@@ -13,6 +13,8 @@ const (
 	ModelClaude3Haiku20240307      Model = "claude-3-haiku-20240307"
 	ModelClaude3Dot5HaikuLatest    Model = "claude-3-5-haiku-latest"
 	ModelClaude3Dot5Haiku20241022  Model = "claude-3-5-haiku-20241022"
+	ModelClaude3Dot7SonnetLatest   Model = "claude-3-7-sonnet-latest"
+	ModelClaude3Dot7Sonnet20250219 Model = "claude-3-7-sonnet-20250219"
 )
 
 type ChatRole string

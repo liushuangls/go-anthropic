@@ -84,6 +84,27 @@ func TestIntegrationMessages(t *testing.T) {
 			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
 		})
 	})
+
+	t.Run("CreateMessages on real API with claude-3-7-sonnet", func(t *testing.T) {
+		newClient := anthropic.NewClient(APIKey)
+		req := request
+		req.Model = anthropic.ModelClaude3Dot7Sonnet20250219
+
+		resp, err := newClient.CreateMessages(ctx, req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
+		t.Logf("CreateMessages resp: %+v", resp)
+		t.Logf("CreteMessages resp content: %s", resp.GetFirstContentText())
+
+		t.Run("RateLimitHeaders are present", func(t *testing.T) {
+			rateLimHeader, err := resp.GetRateLimitHeaders()
+			if err != nil {
+				t.Fatalf("GetRateLimitHeaders error: %s", err)
+			}
+			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
+		})
+	})
 }
 
 func TestComputerUse(t *testing.T) {
