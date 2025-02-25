@@ -40,6 +40,13 @@ const (
 	MessagesContentSourceTypeBase64 = "base64"
 )
 
+type ThinkingType string
+
+const (
+	ThinkingTypeEnabled  ThinkingType = "enabled"
+	ThinkingTypeDisabled ThinkingType = "disabled"
+)
+
 type MessagesRequest struct {
 	Model            Model     `json:"model,omitempty"`
 	AnthropicVersion string    `json:"anthropic_version,omitempty"`
@@ -56,6 +63,7 @@ type MessagesRequest struct {
 	TopK          *int                `json:"top_k,omitempty"`
 	Tools         []ToolDefinition    `json:"tools,omitempty"`
 	ToolChoice    *ToolChoice         `json:"tool_choice,omitempty"`
+	Thinking      *Thinking           `json:"thinking,omitempty"`
 }
 
 func (m MessagesRequest) MarshalJSON() ([]byte, error) {
@@ -415,6 +423,13 @@ type ToolChoice struct {
 	// oneof: auto(default) any tool
 	Type string `json:"type"`
 	Name string `json:"name,omitempty"`
+}
+
+type Thinking struct {
+	Type ThinkingType `json:"type"`
+	// Determines how many tokens Claude can use for its internal reasoning process. Larger budgets can enable more thorough analysis for complex problems, improving response quality.
+	// Must be ≥1024 and less than max_tokens.
+	BudgetTokens int `json:"budget_tokens"`
 }
 
 func (c *Client) CreateMessages(
