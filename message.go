@@ -16,13 +16,15 @@ const (
 type MessagesContentType string
 
 const (
-	MessagesContentTypeText           MessagesContentType = "text"
-	MessagesContentTypeTextDelta      MessagesContentType = "text_delta"
-	MessagesContentTypeImage          MessagesContentType = "image"
-	MessagesContentTypeToolResult     MessagesContentType = "tool_result"
-	MessagesContentTypeToolUse        MessagesContentType = "tool_use"
-	MessagesContentTypeInputJsonDelta MessagesContentType = "input_json_delta"
-	MessagesContentTypeDocument       MessagesContentType = "document"
+	MessagesContentTypeText             MessagesContentType = "text"
+	MessagesContentTypeTextDelta        MessagesContentType = "text_delta"
+	MessagesContentTypeImage            MessagesContentType = "image"
+	MessagesContentTypeToolResult       MessagesContentType = "tool_result"
+	MessagesContentTypeToolUse          MessagesContentType = "tool_use"
+	MessagesContentTypeInputJsonDelta   MessagesContentType = "input_json_delta"
+	MessagesContentTypeDocument         MessagesContentType = "document"
+	MessagesContentTypeThinking         MessagesContentType = "thinking"
+	MessagesContentTypeRedactedThinking MessagesContentType = "redacted_thinking"
 )
 
 type MessagesStopReason string
@@ -190,6 +192,10 @@ type MessageContent struct {
 	PartialJson *string `json:"partial_json,omitempty"`
 
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
+
+	*MessageContentThinking
+
+	*MessageContentRedactedThinking
 }
 
 func NewTextMessageContent(text string) MessageContent {
@@ -335,6 +341,15 @@ func NewMessageContentToolUse(
 
 func (c *MessageContentToolUse) UnmarshalInput(v any) error {
 	return json.Unmarshal(c.Input, v)
+}
+
+type MessageContentThinking struct {
+	Thinking  string `json:"thinking,omitempty"`
+	Signature string `json:"signature,omitempty"`
+}
+
+type MessageContentRedactedThinking struct {
+	Data string `json:"data,omitempty"`
 }
 
 type MessagesResponse struct {

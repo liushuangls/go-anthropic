@@ -89,13 +89,27 @@ func TestIntegrationMessages(t *testing.T) {
 		newClient := anthropic.NewClient(APIKey)
 		req := request
 		req.Model = anthropic.ModelClaude3Dot7Sonnet20250219
+		req.MaxTokens = 2048
+		req.Thinking = &anthropic.Thinking{
+			Type:         anthropic.ThinkingTypeEnabled,
+			BudgetTokens: 1024,
+		}
 
 		resp, err := newClient.CreateMessages(ctx, req)
 		if err != nil {
 			t.Fatalf("CreateMessages error: %s", err)
 		}
 		t.Logf("CreateMessages resp: %+v", resp)
-		t.Logf("CreteMessages resp content: %s", resp.GetFirstContentText())
+		for i, content := range resp.Content {
+			switch content.Type {
+			case anthropic.MessagesContentTypeText:
+				t.Logf("CreateMessages resp text content[%d]: %s", i, *content.Text)
+			case anthropic.MessagesContentTypeThinking:
+				t.Logf("CreateMessages resp thking content[%d]: %+v, ", i, content.MessageContentThinking)
+			default:
+				t.Logf("CreateMessages resp content[%d]: %+v", i, content)
+			}
+		}
 
 		t.Run("RateLimitHeaders are present", func(t *testing.T) {
 			rateLimHeader, err := resp.GetRateLimitHeaders()
