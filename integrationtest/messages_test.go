@@ -105,7 +105,11 @@ func TestIntegrationMessages(t *testing.T) {
 			case anthropic.MessagesContentTypeText:
 				t.Logf("CreateMessages resp text content[%d]: %s", i, *content.Text)
 			case anthropic.MessagesContentTypeThinking:
-				t.Logf("CreateMessages resp thking content[%d]: %+v, ", i, content.MessageContentThinking)
+				t.Logf(
+					"CreateMessages resp thking content[%d]: %+v",
+					i,
+					content.MessageContentThinking,
+				)
 			default:
 				t.Logf("CreateMessages resp content[%d]: %+v", i, content)
 			}
