@@ -23,13 +23,19 @@ import (
 var sources embed.FS
 
 var rateLimitHeaders = map[string]string{
-	"anthropic-ratelimit-requests-limit":     "100",
-	"anthropic-ratelimit-requests-remaining": "99",
-	"anthropic-ratelimit-requests-reset":     "2024-06-04T07:13:19Z",
-	"anthropic-ratelimit-tokens-limit":       "10000",
-	"anthropic-ratelimit-tokens-remaining":   "9900",
-	"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
-	"retry-after":                            "", // retry-after is optional and may not be present.
+	"anthropic-ratelimit-requests-limit":          "100",
+	"anthropic-ratelimit-requests-remaining":      "99",
+	"anthropic-ratelimit-requests-reset":          "2024-06-04T07:13:19Z",
+	"anthropic-ratelimit-tokens-limit":            "10000",
+	"anthropic-ratelimit-tokens-remaining":        "9900",
+	"anthropic-ratelimit-tokens-reset":            "2024-06-04T07:13:19Z",
+	"anthropic-ratelimit-input-tokens-limit":      "100",
+	"anthropic-ratelimit-input-tokens-remaining":  "100",
+	"anthropic-ratelimit-input-tokens-reset":      "2024-06-04T07:13:19Z",
+	"anthropic-ratelimit-output-tokens-limit":     "100",
+	"anthropic-ratelimit-output-tokens-remaining": "100",
+	"anthropic-ratelimit-output-tokens-reset":     "2024-06-04T07:13:19Z",
+	"retry-after": "", // retry-after is optional and may not be present.
 }
 
 func TestMessages(t *testing.T) {
@@ -444,13 +450,19 @@ func TestMessagesToolUse(t *testing.T) {
 
 func TestMessagesRateLimitHeaders(t *testing.T) {
 	expectedSuccess := map[string]any{
-		"anthropic-ratelimit-requests-limit":     100,
-		"anthropic-ratelimit-requests-remaining": 99,
-		"anthropic-ratelimit-requests-reset":     "2024-06-04T07:13:19Z",
-		"anthropic-ratelimit-tokens-limit":       10000,
-		"anthropic-ratelimit-tokens-remaining":   9900,
-		"anthropic-ratelimit-tokens-reset":       "2024-06-04T07:13:19Z",
-		"retry-after":                            -1, // if not present, should be -1
+		"anthropic-ratelimit-requests-limit":          100,
+		"anthropic-ratelimit-requests-remaining":      99,
+		"anthropic-ratelimit-requests-reset":          "2024-06-04T07:13:19Z",
+		"anthropic-ratelimit-tokens-limit":            10000,
+		"anthropic-ratelimit-tokens-remaining":        9900,
+		"anthropic-ratelimit-tokens-reset":            "2024-06-04T07:13:19Z",
+		"anthropic-ratelimit-input-tokens-limit":      100,
+		"anthropic-ratelimit-input-tokens-remaining":  100,
+		"anthropic-ratelimit-input-tokens-reset":      "2024-06-04T07:13:19Z",
+		"anthropic-ratelimit-output-tokens-limit":     100,
+		"anthropic-ratelimit-output-tokens-remaining": 100,
+		"anthropic-ratelimit-output-tokens-reset":     "2024-06-04T07:13:19Z",
+		"retry-after": -1, // if not present, should be -1
 	}
 
 	requestFailRateLimitHeaders := make(map[string]string)
@@ -523,7 +535,12 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if string(bs) != string(bs2) {
+			var rlHeader2 anthropic.RateLimitHeaders
+			if err := json.Unmarshal(bs2, &rlHeader2); err != nil {
+				t.Fatal(err)
+			}
+
+			if rlHeaders != rlHeader2 {
 				t.Fatalf("rate limit headers mismatch. got %s, want %s", string(bs), string(bs2))
 			}
 		})

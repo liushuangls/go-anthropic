@@ -7,6 +7,28 @@ import (
 	"github.com/liushuangls/go-anthropic/v2"
 )
 
+func printMessagesContent(t *testing.T, cs []anthropic.MessageContent) {
+	for i, content := range cs {
+		printMessageContent(t, i, content)
+	}
+}
+
+func printMessageContent(t *testing.T, i int, content anthropic.MessageContent) {
+	switch content.Type {
+	case anthropic.MessagesContentTypeText, anthropic.MessagesContentTypeTextDelta:
+		t.Logf("CreateMessages resp text content[%d]: %s", i, *content.Text)
+	case anthropic.MessagesContentTypeThinking, anthropic.MessagesContentTypeThinkingDelta,
+		anthropic.MessagesContentTypeSignatureDelta:
+		t.Logf(
+			"CreateMessages resp thking content[%d]: %+v",
+			i,
+			content.MessageContentThinking,
+		)
+	default:
+		t.Logf("CreateMessages resp %s content[%d]: %+v", content.Type, i, content)
+	}
+}
+
 func TestIntegrationMessages(t *testing.T) {
 	testAPIKey(t)
 	client := anthropic.NewClient(APIKey)
@@ -75,6 +97,67 @@ func TestIntegrationMessages(t *testing.T) {
 		}
 		t.Logf("CreateMessages resp: %+v", resp)
 		t.Logf("CreteMessages resp content: %s", resp.GetFirstContentText())
+
+		t.Run("RateLimitHeaders are present", func(t *testing.T) {
+			rateLimHeader, err := resp.GetRateLimitHeaders()
+			if err != nil {
+				t.Fatalf("GetRateLimitHeaders error: %s", err)
+			}
+			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
+		})
+	})
+
+	t.Run("CreateMessages on real API with claude-3-7-sonnet", func(t *testing.T) {
+		newClient := anthropic.NewClient(APIKey)
+		req := request
+		req.Model = anthropic.ModelClaude3Dot7Sonnet20250219
+		req.MaxTokens = 2048
+		req.Thinking = &anthropic.Thinking{
+			Type:         anthropic.ThinkingTypeEnabled,
+			BudgetTokens: 1024,
+		}
+
+		resp, err := newClient.CreateMessages(ctx, req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
+		t.Logf("CreateMessages resp: %+v", resp)
+		printMessagesContent(t, resp.Content)
+
+		t.Run("RateLimitHeaders are present", func(t *testing.T) {
+			rateLimHeader, err := resp.GetRateLimitHeaders()
+			if err != nil {
+				t.Fatalf("GetRateLimitHeaders error: %s", err)
+			}
+			t.Logf("RateLimitHeaders: %+v", rateLimHeader)
+		})
+	})
+
+	t.Run("CreateMessagesStream on real API with claude-3-7-sonnet", func(t *testing.T) {
+		newClient := anthropic.NewClient(APIKey)
+		var req anthropic.MessagesStreamRequest
+		req.MessagesRequest = request
+		req.Model = anthropic.ModelClaude3Dot7Sonnet20250219
+		req.MaxTokens = 2048
+		req.Stream = true
+		req.Thinking = &anthropic.Thinking{
+			Type:         anthropic.ThinkingTypeEnabled,
+			BudgetTokens: 1024,
+		}
+		req.OnContentBlockStart = func(data anthropic.MessagesEventContentBlockStartData) {
+			t.Logf("OnContentBlockStart: ")
+			printMessageContent(t, 0, data.ContentBlock)
+		}
+		req.OnContentBlockDelta = func(data anthropic.MessagesEventContentBlockDeltaData) {
+			t.Logf("OnContentBlockDelta: ")
+			printMessageContent(t, 0, data.Delta)
+		}
+
+		resp, err := newClient.CreateMessagesStream(ctx, req)
+		if err != nil {
+			t.Fatalf("CreateMessagesStream error: %s", err)
+		}
+		printMessagesContent(t, resp.Content)
 
 		t.Run("RateLimitHeaders are present", func(t *testing.T) {
 			rateLimHeader, err := resp.GetRateLimitHeaders()
