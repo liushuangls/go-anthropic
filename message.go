@@ -229,16 +229,18 @@ type MessageContent struct {
 
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 
-	// For text content with citations
-	Citations []Citation `json:"citations,omitempty"`
+	// Given the nature of the API and the MessageContent's struct multiple duties,
+	// we have to override the standard json unmarshalling behavior from API responses to handle citations.
+	// See UnmarshalJSON below where we give this the alias of citations during unmarshalling.
+	Citations []Citation `json:"citations_list,omitempty"`
 
 	// For citations_delta events in streaming
-	Citation *Citation `json:"citation,omitempty"`
+	Citation *Citation `json:"citation_delta,omitempty"`
 
 	// For document content
 	Title             string             `json:"title,omitempty"`
 	Context           string             `json:"context,omitempty"`
-	DocumentCitations *DocumentCitations `json:"citations,omitempty"`
+	DocumentCitations *DocumentCitations `json:"citations,omitempty"` // Used in requests
 
 	// Thinking-related fields
 	*MessageContentThinking
@@ -290,6 +292,19 @@ func NewDocumentMessageContent(source MessageContentSource, title, context strin
 			Enabled: enableCitations,
 		},
 	}
+}
+
+func NewPDFDocumentMessageContent(base64EncodedPDFData, title, context string, enableCitations bool) MessageContent {
+	return NewDocumentMessageContent(
+		MessageContentSource{
+			Type:      MessagesContentSourceTypeBase64,
+			MediaType: "application/pdf",
+			Data:      base64EncodedPDFData,
+		},
+		title,
+		context,
+		enableCitations,
+	)
 }
 
 func NewTextDocumentMessageContent(text, title, context string, enableCitations bool) MessageContent {
