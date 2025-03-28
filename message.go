@@ -282,7 +282,11 @@ func NewImageMessageContent(source MessageContentSource) MessageContent {
 	}
 }
 
-func NewDocumentMessageContent(source MessageContentSource, title, context string, enableCitations bool) MessageContent {
+func NewDocumentMessageContent(
+	source MessageContentSource,
+	title, context string,
+	enableCitations bool,
+) MessageContent {
 	return MessageContent{
 		Type:    MessagesContentTypeDocument,
 		Source:  &source,
@@ -294,7 +298,10 @@ func NewDocumentMessageContent(source MessageContentSource, title, context strin
 	}
 }
 
-func NewPDFDocumentMessageContent(base64EncodedPDFData, title, context string, enableCitations bool) MessageContent {
+func NewPDFDocumentMessageContent(
+	base64EncodedPDFData, title, context string,
+	enableCitations bool,
+) MessageContent {
 	return NewDocumentMessageContent(
 		MessageContentSource{
 			Type:      MessagesContentSourceTypeBase64,
@@ -307,7 +314,10 @@ func NewPDFDocumentMessageContent(base64EncodedPDFData, title, context string, e
 	)
 }
 
-func NewTextDocumentMessageContent(text, title, context string, enableCitations bool) MessageContent {
+func NewTextDocumentMessageContent(
+	text, title, context string,
+	enableCitations bool,
+) MessageContent {
 	return NewDocumentMessageContent(
 		MessageContentSource{
 			Type:      MessagesContentSourceTypeText,
@@ -320,7 +330,11 @@ func NewTextDocumentMessageContent(text, title, context string, enableCitations 
 	)
 }
 
-func NewCustomContentDocumentMessageContent(content []MessageContent, title, context string, enableCitations bool) MessageContent {
+func NewCustomContentDocumentMessageContent(
+	content []MessageContent,
+	title, context string,
+	enableCitations bool,
+) MessageContent {
 	return NewDocumentMessageContent(
 		MessageContentSource{
 			Type:    MessagesContentSourceTypeContent,

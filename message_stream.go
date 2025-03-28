@@ -72,7 +72,7 @@ type MessagesEventContentBlockDeltaData struct {
 // for different purposes:
 // - In requests: maps to DocumentCitations (a flag to enable citations)
 // - In responses: maps to Citations slice (actual citation data)
-// 
+//
 // For streaming, citation events arrive with type "citations_delta", but the citation data
 // isn't properly captured by the default unmarshaler. This custom implementation ensures
 // that citation data in streaming events is properly extracted and made available through
@@ -103,7 +103,8 @@ func (m *MessagesEventContentBlockDeltaData) UnmarshalJSON(data []byte) error {
 
 			if citationsRaw, ok := deltaMap["citations"]; ok {
 				var citations []Citation
-				if err := json.Unmarshal(citationsRaw, &citations); err == nil && len(citations) > 0 {
+				if err := json.Unmarshal(citationsRaw, &citations); err == nil &&
+					len(citations) > 0 {
 					m.Delta.Citation = &citations[0]
 				}
 			}
