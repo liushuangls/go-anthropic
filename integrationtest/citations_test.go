@@ -65,7 +65,9 @@ func TestIntegrationCitations(t *testing.T) {
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
 					textDocument,
-					anthropic.NewTextMessageContent("Why is the color of the sky blue according to the Facts Document? Use citations to back up your answer."),
+					anthropic.NewTextMessageContent(
+						"Why is the color of the sky blue according to the Facts Document? Use citations to back up your answer.",
+					),
 				},
 			},
 		},
@@ -79,7 +81,9 @@ func TestIntegrationCitations(t *testing.T) {
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
 					customDocument,
-					anthropic.NewTextMessageContent("Is that which can be named the eternal name? Use citations to back up your answer."),
+					anthropic.NewTextMessageContent(
+						"Is that which can be named the eternal name? Use citations to back up your answer.",
+					),
 				},
 			},
 		},
@@ -93,7 +97,9 @@ func TestIntegrationCitations(t *testing.T) {
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
 					pdfDocument,
-					anthropic.NewTextMessageContent("Does Socrates admit to corrupting the youth? Please be brief and use citations to back up your answer."),
+					anthropic.NewTextMessageContent(
+						"Does Socrates admit to corrupting the youth? Please be brief and use citations to back up your answer.",
+					),
 				},
 			},
 		},
@@ -121,27 +127,30 @@ func TestIntegrationCitations(t *testing.T) {
 		}
 	})
 
-	t.Run("CreateMessages with citations on Claude 3.7 Sonnet (Custom Document)", func(t *testing.T) {
-		resp, err := client.CreateMessages(ctx, requestCustomDocument)
-		if err != nil {
-			t.Fatalf("CreateMessages error: %s", err)
-		}
-
-		t.Logf("Response content: %+v", resp.Content)
-
-		hasCitations := false
-		for _, content := range resp.Content {
-			if len(content.Citations) > 0 {
-				hasCitations = true
-				t.Logf("Found citations: %+v", content.Citations)
-				break
+	t.Run(
+		"CreateMessages with citations on Claude 3.7 Sonnet (Custom Document)",
+		func(t *testing.T) {
+			resp, err := client.CreateMessages(ctx, requestCustomDocument)
+			if err != nil {
+				t.Fatalf("CreateMessages error: %s", err)
 			}
-		}
 
-		if !hasCitations {
-			t.Errorf("Expected citations in the response, but none were found")
-		}
-	})
+			t.Logf("Response content: %+v", resp.Content)
+
+			hasCitations := false
+			for _, content := range resp.Content {
+				if len(content.Citations) > 0 {
+					hasCitations = true
+					t.Logf("Found citations: %+v", content.Citations)
+					break
+				}
+			}
+
+			if !hasCitations {
+				t.Errorf("Expected citations in the response, but none were found")
+			}
+		},
+	)
 
 	t.Run("CreateMessages with citations on Claude 3.7 Sonnet (PDF Document)", func(t *testing.T) {
 		resp, err := client.CreateMessages(ctx, requestPDFDocument)
