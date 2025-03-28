@@ -94,7 +94,6 @@ func (m MessagesRequest) MarshalJSON() ([]byte, error) {
 		Alias: (Alias)(m),
 	}
 
-	// 根据 MultiSystem 是否为空来设置 system 字段
 	if len(m.MultiSystem) > 0 {
 		aux.System = m.MultiSystem
 	} else if len(m.System) > 0 {
@@ -282,7 +281,11 @@ func NewImageMessageContent(source MessageContentSource) MessageContent {
 	}
 }
 
-func NewDocumentMessageContent(source MessageContentSource, title, context string, enableCitations bool) MessageContent {
+func NewDocumentMessageContent(
+	source MessageContentSource,
+	title, context string,
+	enableCitations bool,
+) MessageContent {
 	return MessageContent{
 		Type:    MessagesContentTypeDocument,
 		Source:  &source,
@@ -294,7 +297,10 @@ func NewDocumentMessageContent(source MessageContentSource, title, context strin
 	}
 }
 
-func NewPDFDocumentMessageContent(base64EncodedPDFData, title, context string, enableCitations bool) MessageContent {
+func NewPDFDocumentMessageContent(
+	base64EncodedPDFData, title, context string,
+	enableCitations bool,
+) MessageContent {
 	return NewDocumentMessageContent(
 		MessageContentSource{
 			Type:      MessagesContentSourceTypeBase64,
@@ -307,7 +313,10 @@ func NewPDFDocumentMessageContent(base64EncodedPDFData, title, context string, e
 	)
 }
 
-func NewTextDocumentMessageContent(text, title, context string, enableCitations bool) MessageContent {
+func NewTextDocumentMessageContent(
+	text, title, context string,
+	enableCitations bool,
+) MessageContent {
 	return NewDocumentMessageContent(
 		MessageContentSource{
 			Type:      MessagesContentSourceTypeText,
@@ -320,7 +329,11 @@ func NewTextDocumentMessageContent(text, title, context string, enableCitations 
 	)
 }
 
-func NewCustomContentDocumentMessageContent(content []MessageContent, title, context string, enableCitations bool) MessageContent {
+func NewCustomContentDocumentMessageContent(
+	content []MessageContent,
+	title, context string,
+	enableCitations bool,
+) MessageContent {
 	return NewDocumentMessageContent(
 		MessageContentSource{
 			Type:    MessagesContentSourceTypeContent,
