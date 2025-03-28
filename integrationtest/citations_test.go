@@ -21,12 +21,11 @@ func TestIntegrationCitations(t *testing.T) {
 	// Only works with Claude 3.7 Sonnet, 3.5 Sonnet, and 3.5 Haiku
 	// Citations not available through Vertex API
 
-	// Create a textDocument with citations enabled
 	textDocument := anthropic.NewTextDocumentMessageContent(
 		"The sky is blue. The grass is green. Water boils at 100 degrees Celsius. The sky is blue because of Rayleigh scattering.",
 		"Facts Document",
 		"This textDocument contains simple scientific facts.",
-		true, // Enable citations
+		true,
 	)
 
 	customDocument := anthropic.NewCustomContentDocumentMessageContent(
@@ -38,7 +37,7 @@ func TestIntegrationCitations(t *testing.T) {
 		}),
 		"Tao Te Ching",
 		"This textDocument contains the opening of the Tao Te Ching.",
-		true, // Enable citations
+		true,
 	)
 
 	pdfPath := "sources/apology.pdf"
@@ -58,9 +57,8 @@ func TestIntegrationCitations(t *testing.T) {
 		"The trial and apology of socrates by plato",
 		true)
 
-	// Create a request that uses the textDocument and asks about its content
 	request := anthropic.MessagesRequest{
-		Model:     anthropic.ModelClaude3Dot7Sonnet20250219, // Only works with Claude 3.7 Sonnet, 3.5 Sonnet, and 3.5 Haiku
+		Model:     anthropic.ModelClaude3Dot7Sonnet20250219,
 		MaxTokens: 1024,
 		Messages: []anthropic.Message{
 			{
@@ -73,7 +71,6 @@ func TestIntegrationCitations(t *testing.T) {
 		},
 	}
 
-	// Create a request that uses the textDocument and asks about its content
 	requestCustomDocument := anthropic.MessagesRequest{
 		Model:     anthropic.ModelClaude3Dot7Sonnet20250219,
 		MaxTokens: 1024,
@@ -88,7 +85,6 @@ func TestIntegrationCitations(t *testing.T) {
 		},
 	}
 
-	// Create a request that uses the textDocument and asks about its content
 	requestPDFDocument := anthropic.MessagesRequest{
 		Model:     anthropic.ModelClaude3Dot7Sonnet20250219,
 		MaxTokens: 1024,
@@ -111,7 +107,6 @@ func TestIntegrationCitations(t *testing.T) {
 
 		t.Logf("Response content: %+v", resp.Content)
 
-		// Verify we got citations in the response
 		hasCitations := false
 		for _, content := range resp.Content {
 			if len(content.Citations) > 0 {
@@ -134,7 +129,6 @@ func TestIntegrationCitations(t *testing.T) {
 
 		t.Logf("Response content: %+v", resp.Content)
 
-		// Verify we got citations in the response
 		hasCitations := false
 		for _, content := range resp.Content {
 			if len(content.Citations) > 0 {
@@ -157,7 +151,6 @@ func TestIntegrationCitations(t *testing.T) {
 
 		t.Logf("Response content: %+v", resp.Content)
 
-		// Verify we got citations in the response
 		hasCitations := false
 		for _, content := range resp.Content {
 			if len(content.Citations) > 0 {
@@ -177,10 +170,8 @@ func TestIntegrationCitations(t *testing.T) {
 			MessagesRequest: request,
 		}
 
-		// Track if we received any citation delta events
 		receivedCitationDelta := false
 
-		// Add verbose logging for all event types
 		streamRequest.OnMessageStart = func(data anthropic.MessagesEventMessageStartData) {
 			t.Logf("OnMessageStart event received: %+v", data.Type)
 		}
@@ -190,7 +181,6 @@ func TestIntegrationCitations(t *testing.T) {
 				data.Index, data.ContentBlock.Type)
 		}
 
-		// Add callback to detect citation delta events in the content block delta
 		streamRequest.OnContentBlockDelta = func(data anthropic.MessagesEventContentBlockDeltaData) {
 			t.Logf("OnContentBlockDelta event received: index=%d, delta_type=%s",
 				data.Index, data.Delta.Type)
@@ -224,7 +214,6 @@ func TestIntegrationCitations(t *testing.T) {
 
 		t.Logf("Stream response content: %+v", resp.Content)
 
-		// Check for citations in the final merged content
 		hasCitations := false
 		for _, content := range resp.Content {
 			if len(content.Citations) > 0 {
@@ -255,7 +244,6 @@ func TestIntegrationCitations(t *testing.T) {
 
 		t.Logf("Claude 3.5 Haiku response content: %+v", resp.Content)
 
-		// Verify we got citations in the response
 		hasCitations := false
 		for _, content := range resp.Content {
 			if len(content.Citations) > 0 {
@@ -267,56 +255,6 @@ func TestIntegrationCitations(t *testing.T) {
 
 		if !hasCitations {
 			t.Errorf("Expected citations in the Claude 3.5 Haiku response, but none were found")
-		}
-	})
-
-	// Test with custom content textDocument
-	t.Run("CreateMessages with custom content textDocument", func(t *testing.T) {
-		customContent := []anthropic.MessageContent{
-			anthropic.NewTextMessageContent("The Earth orbits the Sun."),
-			anthropic.NewTextMessageContent("The Moon orbits the Earth."),
-		}
-
-		customDoc := anthropic.NewCustomContentDocumentMessageContent(
-			customContent,
-			"Astronomy Facts",
-			"This textDocument contains basic astronomy facts.",
-			true, // Enable citations
-		)
-
-		customRequest := anthropic.MessagesRequest{
-			Model:     anthropic.ModelClaude3Dot7Sonnet20250219,
-			MaxTokens: 1024,
-			Messages: []anthropic.Message{
-				{
-					Role: anthropic.RoleUser,
-					Content: []anthropic.MessageContent{
-						customDoc,
-						anthropic.NewTextMessageContent("What orbits the Earth according to the textDocument? Please cite your sources."),
-					},
-				},
-			},
-		}
-
-		resp, err := client.CreateMessages(ctx, customRequest)
-		if err != nil {
-			t.Fatalf("CreateMessages error with custom textDocument: %s", err)
-		}
-
-		t.Logf("Custom textDocument response content: %+v", resp.Content)
-
-		// Verify we got citations in the response
-		hasCitations := false
-		for _, content := range resp.Content {
-			if len(content.Citations) > 0 {
-				hasCitations = true
-				t.Logf("Found citations in custom textDocument response: %+v", content.Citations)
-				break
-			}
-		}
-
-		if !hasCitations {
-			t.Errorf("Expected citations in the custom textDocument response, but none were found")
 		}
 	})
 }
