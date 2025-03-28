@@ -23,10 +23,26 @@ const (
 	MessagesContentTypeToolUse          MessagesContentType = "tool_use"
 	MessagesContentTypeInputJsonDelta   MessagesContentType = "input_json_delta"
 	MessagesContentTypeDocument         MessagesContentType = "document"
+	MessagesContentTypeCitationsDelta   MessagesContentType = "citations_delta"
 	MessagesContentTypeThinking         MessagesContentType = "thinking"
 	MessagesContentTypeThinkingDelta    MessagesContentType = "thinking_delta"
 	MessagesContentTypeSignatureDelta   MessagesContentType = "signature_delta"
 	MessagesContentTypeRedactedThinking MessagesContentType = "redacted_thinking"
+)
+
+type CitationType string
+
+const (
+	CitationTypeCharLocation CitationType = "char_location"
+	CitationTypePageNumber   CitationType = "page_number"
+	CitationTypeBlockIndex   CitationType = "block_index"
+)
+
+type ThinkingType string
+
+const (
+	ThinkingTypeEnabled  ThinkingType = "enabled"
+	ThinkingTypeDisabled ThinkingType = "disabled"
 )
 
 type MessagesStopReason string
@@ -41,15 +57,14 @@ const (
 type MessagesContentSourceType string
 
 const (
-	MessagesContentSourceTypeBase64 = "base64"
+	MessagesContentSourceTypeBase64  = "base64"
+	MessagesContentSourceTypeText    = "text"
+	MessagesContentSourceTypeContent = "content"
 )
 
-type ThinkingType string
-
-const (
-	ThinkingTypeEnabled  ThinkingType = "enabled"
-	ThinkingTypeDisabled ThinkingType = "disabled"
-)
+type DocumentCitations struct {
+	Enabled bool `json:"enabled"`
+}
 
 type MessagesRequest struct {
 	Model            Model     `json:"model,omitempty"`
@@ -180,6 +195,25 @@ type MessageCacheControl struct {
 	Type CacheControlType `json:"type"`
 }
 
+type Citation struct {
+	Type          CitationType `json:"type"`
+	CitedText     string       `json:"cited_text"`
+	DocumentIndex int          `json:"document_index"`
+	DocumentTitle string       `json:"document_title,omitempty"`
+
+	// For char_location citations
+	StartCharIndex *int `json:"start_char_index,omitempty"`
+	EndCharIndex   *int `json:"end_char_index,omitempty"`
+
+	// For page_number citations
+	StartPage *int `json:"start_page,omitempty"`
+	EndPage   *int `json:"end_page,omitempty"`
+
+	// For block_index citations
+	StartBlockIndex *int `json:"start_block_index,omitempty"`
+	EndBlockIndex   *int `json:"end_block_index,omitempty"`
+}
+
 type MessageContent struct {
 	Type MessagesContentType `json:"type"`
 
@@ -195,15 +229,49 @@ type MessageContent struct {
 
 	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 
+	// Given the nature of the API and the MessageContent's struct multiple duties,
+	// we have to override the standard json unmarshalling behavior from API responses to handle citations.
+	// See UnmarshalJSON below where we give this the alias of citations during unmarshalling.
+	Citations []Citation `json:"citations_list,omitempty"`
+
+	// For citations_delta events in streaming
+	Citation *Citation `json:"citation_delta,omitempty"`
+
+	// For document content
+	Title             string             `json:"title,omitempty"`
+	Context           string             `json:"context,omitempty"`
+	DocumentCitations *DocumentCitations `json:"citations,omitempty"` // Used in requests
+
+	// Thinking-related fields
 	*MessageContentThinking
 
 	*MessageContentRedactedThinking
 }
 
+// UnmarshalJSON implements custom JSON unmarshaling for MessageContent
+func (m *MessageContent) UnmarshalJSON(data []byte) error {
+	type Alias MessageContent
+	aux := &struct {
+		Citations []Citation `json:"citations"`
+		*Alias
+	}{
+		Alias: (*Alias)(m),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Copy Citations from aux to m
+	m.Citations = aux.Citations
+
+	return nil
+}
+
 func NewTextMessageContent(text string) MessageContent {
 	return MessageContent{
-		Type: MessagesContentTypeText,
-		Text: &text,
+		Type:      MessagesContentTypeText,
+		Text:      &text,
+		Citations: make([]Citation, 0),
 	}
 }
 
@@ -214,11 +282,54 @@ func NewImageMessageContent(source MessageContentSource) MessageContent {
 	}
 }
 
-func NewDocumentMessageContent(source MessageContentSource) MessageContent {
+func NewDocumentMessageContent(source MessageContentSource, title, context string, enableCitations bool) MessageContent {
 	return MessageContent{
-		Type:   MessagesContentTypeDocument,
-		Source: &source,
+		Type:    MessagesContentTypeDocument,
+		Source:  &source,
+		Title:   title,
+		Context: context,
+		DocumentCitations: &DocumentCitations{
+			Enabled: enableCitations,
+		},
 	}
+}
+
+func NewPDFDocumentMessageContent(base64EncodedPDFData, title, context string, enableCitations bool) MessageContent {
+	return NewDocumentMessageContent(
+		MessageContentSource{
+			Type:      MessagesContentSourceTypeBase64,
+			MediaType: "application/pdf",
+			Data:      base64EncodedPDFData,
+		},
+		title,
+		context,
+		enableCitations,
+	)
+}
+
+func NewTextDocumentMessageContent(text, title, context string, enableCitations bool) MessageContent {
+	return NewDocumentMessageContent(
+		MessageContentSource{
+			Type:      MessagesContentSourceTypeText,
+			MediaType: "text/plain",
+			Data:      text,
+		},
+		title,
+		context,
+		enableCitations,
+	)
+}
+
+func NewCustomContentDocumentMessageContent(content []MessageContent, title, context string, enableCitations bool) MessageContent {
+	return NewDocumentMessageContent(
+		MessageContentSource{
+			Type:    MessagesContentSourceTypeContent,
+			Content: content,
+		},
+		title,
+		context,
+		enableCitations,
+	)
 }
 
 func NewToolResultMessageContent(toolUseID, content string, isError bool) MessageContent {
@@ -281,6 +392,13 @@ func (m *MessageContent) MergeContentDelta(mc MessageContent) {
 		} else {
 			*m.PartialJson += *mc.PartialJson
 		}
+	case MessagesContentTypeCitationsDelta:
+		if mc.Citation != nil {
+			if m.Citations == nil {
+				m.Citations = make([]Citation, 0)
+			}
+			m.Citations = append(m.Citations, *mc.Citation)
+		}
 	case MessagesContentTypeThinking,
 		MessagesContentTypeThinkingDelta,
 		MessagesContentTypeSignatureDelta:
@@ -319,8 +437,9 @@ func NewMessageContentToolResult(
 
 type MessageContentSource struct {
 	Type      MessagesContentSourceType `json:"type"`
-	MediaType string                    `json:"media_type"`
-	Data      any                       `json:"data"`
+	MediaType string                    `json:"media_type,omitempty"`
+	Data      any                       `json:"data,omitempty"`
+	Content   []MessageContent          `json:"content,omitempty"`
 }
 
 func NewMessageContentSource(
