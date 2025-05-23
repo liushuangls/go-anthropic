@@ -52,6 +52,7 @@ const (
 	MessagesStopReasonMaxTokens    MessagesStopReason = "max_tokens"
 	MessagesStopReasonStopSequence MessagesStopReason = "stop_sequence"
 	MessagesStopReasonToolUse      MessagesStopReason = "tool_use"
+	MessagesStopRefusal            MessagesStopReason = "refusal"
 )
 
 type MessagesContentSourceType string
