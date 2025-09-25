@@ -354,6 +354,40 @@ func TestMessagesVision(t *testing.T) {
 	t.Logf("CreateMessages resp: %+v", resp)
 }
 
+func TestMessagesVisionV2(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	imageUrl := "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcQotvvFFhgI3W0wmWTyZ6MIbP3c5kLX6McyarVRFBLFf9T6eGuQoFQiP-S2RA181pSZkurOOMSRHKMqPP0dvumCu31mf29w-Hdlll_7Cg"
+	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
+		Model: anthropic.ModelClaudeSonnet4V20250514,
+		Messages: []anthropic.Message{
+			{
+				Role: anthropic.RoleUser,
+				Content: []anthropic.MessageContent{
+					anthropic.NewImageUrlMessageContent(imageUrl),
+					anthropic.NewTextMessageContent("Describe these images."),
+				},
+			},
+		},
+		MaxTokens: 1000,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("CreateMessages resp: %+v", resp)
+}
+
 func TestMessagesToolUse(t *testing.T) {
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handleMessagesEndpoint(rateLimitHeaders))

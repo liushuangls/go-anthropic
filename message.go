@@ -61,6 +61,7 @@ const (
 	MessagesContentSourceTypeBase64  = "base64"
 	MessagesContentSourceTypeText    = "text"
 	MessagesContentSourceTypeContent = "content"
+	MessagesContentSourceTypeUrl     = "url"
 )
 
 type DocumentCitations struct {
@@ -282,6 +283,16 @@ func NewImageMessageContent(source MessageContentSource) MessageContent {
 	}
 }
 
+func NewImageUrlMessageContent(url string) MessageContent {
+	return MessageContent{
+		Type: MessagesContentTypeImage,
+		Source: &MessageContentSource{
+			Type: MessagesContentSourceTypeUrl,
+			Url:  url,
+		},
+	}
+}
+
 func NewDocumentMessageContent(
 	source MessageContentSource,
 	title, context string,
@@ -454,6 +465,7 @@ type MessageContentSource struct {
 	MediaType string                    `json:"media_type,omitempty"`
 	Data      any                       `json:"data,omitempty"`
 	Content   []MessageContent          `json:"content,omitempty"`
+	Url       string                    `json:"url,omitempty"`
 }
 
 func NewMessageContentSource(
