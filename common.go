@@ -13,6 +13,8 @@ const (
 	ModelClaude3Haiku20240307       Model = "claude-3-haiku-20240307"
 	ModelClaude3Dot5HaikuLatest     Model = "claude-3-5-haiku-latest"
 	ModelClaude3Dot5Haiku20241022   Model = "claude-3-5-haiku-20241022"
+	ModelClaudeHaiku4Dot5           Model = "claude-haiku-4-5"
+	ModelClaudeHaiku4Dot5V20251015  Model = "claude-haiku-4-5-20251015"
 	ModelClaude3Dot7SonnetLatest    Model = "claude-3-7-sonnet-latest"
 	ModelClaude3Dot7Sonnet20250219  Model = "claude-3-7-sonnet-20250219"
 	ModelClaudeOpus4Dot0            Model = "claude-opus-4-0"
@@ -46,6 +48,8 @@ func (m Model) asVertexModel() string {
 		return "claude-3-haiku@20240307"
 	case ModelClaude3Dot5Haiku20241022:
 		return "claude-3-5-haiku@20241022"
+	case ModelClaudeHaiku4Dot5, ModelClaudeHaiku4Dot5V20251015:
+		return "claude-haiku-4-5@20251015"
 	case ModelClaudeOpus4Dot0, ModelClaudeOpus4V20250514:
 		return "claude-opus-4@20250514"
 	case ModelClaudeSonnet4Dot0, ModelClaudeSonnet4V20250514:
