@@ -14,11 +14,13 @@ const (
 	ModelClaude3Dot5HaikuLatest     Model = "claude-3-5-haiku-latest"
 	ModelClaude3Dot5Haiku20241022   Model = "claude-3-5-haiku-20241022"
 	ModelClaudeHaiku4Dot5           Model = "claude-haiku-4-5"
-	ModelClaudeHaiku4Dot5V20251015  Model = "claude-haiku-4-5-20251015"
+	ModelClaudeHaiku4Dot5V20251001  Model = "claude-haiku-4-5-20251001"
 	ModelClaude3Dot7SonnetLatest    Model = "claude-3-7-sonnet-latest"
 	ModelClaude3Dot7Sonnet20250219  Model = "claude-3-7-sonnet-20250219"
 	ModelClaudeOpus4Dot0            Model = "claude-opus-4-0"
 	ModelClaudeOpus4V20250514       Model = "claude-opus-4-20250514"
+	ModelClaudeOpus4Dot1            Model = "claude-opus-4-1"
+	ModelClaudeOpus4Dot1V20250805   Model = "claude-opus-4-1-20250805"
 	ModelClaudeSonnet4Dot0          Model = "claude-sonnet-4-0"
 	ModelClaudeSonnet4V20250514     Model = "claude-sonnet-4-20250514"
 	ModelClaudeSonnet4Dot5          Model = "claude-sonnet-4-5"
@@ -48,10 +50,12 @@ func (m Model) asVertexModel() string {
 		return "claude-3-haiku@20240307"
 	case ModelClaude3Dot5Haiku20241022:
 		return "claude-3-5-haiku@20241022"
-	case ModelClaudeHaiku4Dot5, ModelClaudeHaiku4Dot5V20251015:
-		return "claude-haiku-4-5@20251015"
+	case ModelClaudeHaiku4Dot5, ModelClaudeHaiku4Dot5V20251001:
+		return "claude-haiku-4-5@20251001"
 	case ModelClaudeOpus4Dot0, ModelClaudeOpus4V20250514:
 		return "claude-opus-4@20250514"
+	case ModelClaudeOpus4Dot1, ModelClaudeOpus4Dot1V20250805:
+		return "claude-opus-4-1@20250805"
 	case ModelClaudeSonnet4Dot0, ModelClaudeSonnet4V20250514:
 		return "claude-sonnet-4@20250514"
 	case ModelClaudeSonnet4Dot5, ModelClaudeSonnet4Dot5V20250929:
