@@ -25,6 +25,8 @@ const (
 	ModelClaudeSonnet4V20250514     Model = "claude-sonnet-4-20250514"
 	ModelClaudeSonnet4Dot5          Model = "claude-sonnet-4-5"
 	ModelClaudeSonnet4Dot5V20250929 Model = "claude-sonnet-4-5-20250929"
+	ModelClaudeOpus4Dot5            Model = "claude-opus-4-5"
+	ModelClaudeOpus4Dot5V20251101   Model = "claude-opus-4-5-20251101"
 )
 
 type ChatRole string
@@ -60,6 +62,8 @@ func (m Model) asVertexModel() string {
 		return "claude-sonnet-4@20250514"
 	case ModelClaudeSonnet4Dot5, ModelClaudeSonnet4Dot5V20250929:
 		return "claude-sonnet-4-5@20250929"
+	case ModelClaudeOpus4Dot5V20251101, ModelClaudeOpus4Dot5:
+		return "claude-opus-4-5@20251101"
 	default:
 		return string(m)
 	}
