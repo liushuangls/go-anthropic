@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/liushuangls/go-anthropic/v2"
 )
@@ -254,5 +255,87 @@ func TestJsonOutput(t *testing.T) {
 			t.Fatalf("Unmarshal json output error: %s", err)
 		}
 		t.Logf("CreateMessages resp output: %+v", output)
+	})
+}
+
+func TestToolUse(t *testing.T) {
+	testAPIKey(t)
+
+	opts := []anthropic.ClientOption{
+		anthropic.WithBetaVersion(anthropic.BetaStructuredOutputs20251113),
+		anthropic.WithHTTPClient(NewHttpPrettyClient(true)),
+	}
+
+	if BaseURL != "" {
+		opts = append(opts, anthropic.WithBaseURL(BaseURL))
+	}
+
+	client := anthropic.NewClient(
+		APIKey,
+		opts...,
+	)
+
+	t.Run("CreateMessages on real API with tool use no input param", func(t *testing.T) {
+		schema := `{
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  }`
+
+		messages := []anthropic.Message{
+			anthropic.NewUserTextMessage(
+				"Use the 'get_current_time' tool to get the current time.",
+			),
+		}
+
+		req := anthropic.MessagesRequest{
+			Model:     anthropic.ModelClaudeHaiku4Dot5,
+			MaxTokens: 4096,
+			Messages:  messages,
+			Tools: []anthropic.ToolDefinition{
+				{
+					Name:        "get_current_time",
+					Description: "Get the current time",
+					InputSchema: json.RawMessage(schema),
+				},
+			},
+		}
+
+		resp, err := client.CreateMessages(t.Context(), req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
+
+		var toolUse *anthropic.MessageContentToolUse
+		for _, content := range resp.Content {
+			if content.Type == anthropic.MessagesContentTypeToolUse {
+				toolUse = content.MessageContentToolUse
+			}
+		}
+		if toolUse == nil {
+			t.Fatalf("No tool use content found")
+		}
+		t.Logf("CreateMessages resp output: %+v", toolUse)
+
+		messages = append(messages, anthropic.Message{
+			Role: anthropic.RoleAssistant,
+			Content: []anthropic.MessageContent{
+				anthropic.NewToolUseMessageContent(toolUse.ID, toolUse.Name, nil),
+			},
+		})
+
+		currentTime := time.Now().Format(time.RFC3339)
+		messages = append(
+			messages,
+			anthropic.NewToolResultsMessage(toolUse.ID, currentTime, false),
+		)
+
+		req.Messages = messages
+
+		resp, err = client.CreateMessages(t.Context(), req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
 	})
 }
