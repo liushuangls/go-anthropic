@@ -1,8 +1,8 @@
 module github.com/liushuangls/go-anthropic/integrationtest
 
-go 1.23.0
+go 1.24
 
-toolchain go1.24.2
+replace github.com/liushuangls/go-anthropic/v2 => ..
 
 require (
 	github.com/liushuangls/go-anthropic/v2 v2.15.0

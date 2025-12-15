@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	APIKey = os.Getenv("ANTHROPIC_KEY")
+	APIKey  = os.Getenv("ANTHROPIC_KEY")
+	BaseURL = os.Getenv("ANTHROPIC_BASE_URL")
 )
 
 func testAPIKey(t *testing.T) {

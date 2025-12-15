@@ -58,10 +58,16 @@ const (
 type MessagesContentSourceType string
 
 const (
-	MessagesContentSourceTypeBase64  = "base64"
-	MessagesContentSourceTypeText    = "text"
-	MessagesContentSourceTypeContent = "content"
-	MessagesContentSourceTypeUrl     = "url"
+	MessagesContentSourceTypeBase64  MessagesContentSourceType = "base64"
+	MessagesContentSourceTypeText    MessagesContentSourceType = "text"
+	MessagesContentSourceTypeContent MessagesContentSourceType = "content"
+	MessagesContentSourceTypeUrl     MessagesContentSourceType = "url"
+)
+
+type OutputFormatType string
+
+const (
+	OutputFormatJsonSchema OutputFormatType = "json_schema"
 )
 
 type DocumentCitations struct {
@@ -85,6 +91,7 @@ type MessagesRequest struct {
 	Tools         []ToolDefinition    `json:"tools,omitempty"`
 	ToolChoice    *ToolChoice         `json:"tool_choice,omitempty"`
 	Thinking      *Thinking           `json:"thinking,omitempty"`
+	OutputFormat  *OutputFormat       `json:"output_format,omitempty"`
 }
 
 func (m MessagesRequest) MarshalJSON() ([]byte, error) {
@@ -603,6 +610,11 @@ type Thinking struct {
 	// Determines how many tokens Claude can use for its internal reasoning process. Larger budgets can enable more thorough analysis for complex problems, improving response quality.
 	// Must be ≥1024 and less than max_tokens.
 	BudgetTokens int `json:"budget_tokens"`
+}
+
+type OutputFormat struct {
+	Type   OutputFormatType `json:"type"`
+	Schema json.Marshaler   `json:"schema"`
 }
 
 func (c *Client) CreateMessages(
