@@ -233,7 +233,9 @@ func TestJsonOutput(t *testing.T) {
 		Model:     anthropic.ModelClaudeSonnet4Dot5,
 		MaxTokens: 4096,
 		Messages: []anthropic.Message{
-			anthropic.NewUserTextMessage("Extract the key information from this email: John Smith (john@example.com) is interested in our Enterprise plan and wants to schedule a demo for next Tuesday at 2pm."),
+			anthropic.NewUserTextMessage(
+				"Extract the key information from this email: John Smith (john@example.com) is interested in our Enterprise plan and wants to schedule a demo for next Tuesday at 2pm.",
+			),
 		},
 		OutputFormat: &anthropic.OutputFormat{
 			Type:   anthropic.OutputFormatJsonSchema,
