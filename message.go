@@ -557,6 +557,8 @@ type ToolDefinition struct {
 	Description string `json:"description,omitempty"`
 	// docs: https://platform.claude.com/docs/en/api/python/messages/create#tool.eager_input_streaming
 	EagerInputStreaming *bool `json:"eager_input_streaming,omitempty"`
+	// docs: https://platform.claude.com/docs/en/api/messages/create#tool.strict
+	Strict *bool `json:"strict,omitempty"`
 	// InputSchema is an object describing the tool.
 	// You can pass json.RawMessage to describe the schema,
 	// or you can pass in a struct which serializes to the proper JSON schema.
