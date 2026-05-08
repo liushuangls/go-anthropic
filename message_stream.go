@@ -6,9 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
-	"slices"
 )
 
 var (
@@ -231,7 +231,11 @@ func (c *Client) CreateMessagesStream(
 				if request.OnContentBlockStart != nil {
 					request.OnContentBlockStart(d)
 				}
-				response.Content = slices.Insert(response.Content, d.Index, d.ContentBlock)
+				response.Content, err = growMessageContent(response.Content, d.Index)
+				if err != nil {
+					return response, err
+				}
+				response.Content[d.Index] = d.ContentBlock
 				continue
 			case MessagesEventContentBlockDelta:
 				var d MessagesEventContentBlockDeltaData
@@ -241,8 +245,15 @@ func (c *Client) CreateMessagesStream(
 				if request.OnContentBlockDelta != nil {
 					request.OnContentBlockDelta(d)
 				}
+				if err := validateMessageContentIndex(d.Index); err != nil {
+					return response, err
+				}
 				if len(response.Content)-1 < d.Index {
-					response.Content = slices.Insert(response.Content, d.Index, d.Delta)
+					response.Content, err = growMessageContent(response.Content, d.Index)
+					if err != nil {
+						return response, err
+					}
+					response.Content[d.Index] = d.Delta
 				} else {
 					response.Content[d.Index].MergeContentDelta(d.Delta)
 				}
@@ -253,6 +264,9 @@ func (c *Client) CreateMessagesStream(
 					return response, err
 				}
 				var stopContent MessageContent
+				if err := validateMessageContentIndex(d.Index); err != nil {
+					return response, err
+				}
 				if len(response.Content) > d.Index {
 					stopContent = response.Content[d.Index]
 					if stopContent.Type == MessagesContentTypeToolUse {
@@ -296,4 +310,21 @@ func (c *Client) CreateMessagesStream(
 		}
 	}
 	return
+}
+
+func growMessageContent(content []MessageContent, index int) ([]MessageContent, error) {
+	if err := validateMessageContentIndex(index); err != nil {
+		return content, err
+	}
+	if len(content) <= index {
+		content = append(content, make([]MessageContent, index-len(content)+1)...)
+	}
+	return content, nil
+}
+
+func validateMessageContentIndex(index int) error {
+	if index < 0 {
+		return fmt.Errorf("invalid content block index: %d", index)
+	}
+	return nil
 }
