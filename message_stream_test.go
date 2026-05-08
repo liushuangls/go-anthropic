@@ -185,6 +185,133 @@ func TestCreateMessagesStream(t *testing.T) {
 	})
 }
 
+func TestCreateMessagesStreamHandlesSparseContentBlockIndexes(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handlerMessagesStreamSparseContentBlockIndex)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+		MessagesRequest: anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateMessagesStream error: %s", err)
+	}
+
+	if len(resp.Content) != 3 {
+		t.Fatalf("Content length mismatch. got %d, want %d", len(resp.Content), 3)
+	}
+	if resp.Content[2].GetText() != "sparse block" {
+		t.Fatalf(
+			"Content text mismatch. got %s, want %s",
+			resp.Content[2].GetText(),
+			"sparse block",
+		)
+	}
+}
+
+func TestCreateMessagesStreamHandlesSparseContentBlockDeltaIndexes(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handlerMessagesStreamSparseContentBlockDeltaIndex)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+		MessagesRequest: anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateMessagesStream error: %s", err)
+	}
+
+	if len(resp.Content) != 3 {
+		t.Fatalf("Content length mismatch. got %d, want %d", len(resp.Content), 3)
+	}
+	if resp.Content[2].GetText() != "delta block" {
+		t.Fatalf("Content text mismatch. got %s, want %s", resp.Content[2].GetText(), "delta block")
+	}
+}
+
+func TestCreateMessagesStreamReturnsErrorForNegativeContentBlockIndexes(t *testing.T) {
+	tests := []struct {
+		name    string
+		handler test.Handler
+	}{
+		{
+			name:    "content_block_start",
+			handler: handlerMessagesStreamNegativeContentBlockStartIndex,
+		},
+		{
+			name:    "content_block_delta",
+			handler: handlerMessagesStreamNegativeContentBlockDeltaIndex,
+		},
+		{
+			name:    "content_block_stop",
+			handler: handlerMessagesStreamNegativeContentBlockStopIndex,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := test.NewTestServer()
+			server.RegisterHandler("/v1/messages", tt.handler)
+
+			ts := server.AnthropicTestServer()
+			ts.Start()
+			defer ts.Close()
+
+			baseUrl := ts.URL + "/v1"
+			client := anthropic.NewClient(
+				test.GetTestToken(),
+				anthropic.WithBaseURL(baseUrl),
+			)
+
+			_, err := client.CreateMessagesStream(
+				context.Background(),
+				anthropic.MessagesStreamRequest{
+					MessagesRequest: anthropic.MessagesRequest{
+						Model: anthropic.ModelClaude3Haiku20240307,
+						Messages: []anthropic.Message{
+							anthropic.NewUserTextMessage("What is your name?"),
+						},
+						MaxTokens: 1000,
+					},
+				},
+			)
+			if err == nil {
+				t.Fatalf("CreateMessagesStream expect error, but not")
+			}
+		})
+	}
+}
+
 func TestMessagesStreamToolUse(t *testing.T) {
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages", handlerMessagesStreamToolUse)
@@ -455,6 +582,132 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 
 	dataBytes = append(dataBytes, []byte("event: message_stop\n")...)
 	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`+"\n\n")...)
+
+	_, _ = w.Write(dataBytes)
+}
+
+func handlerMessagesStreamSparseContentBlockIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+
+	var dataBytes []byte
+
+	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: content_block_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`+"\n\n",
+		)...)
+	dataBytes = append(dataBytes, []byte("event: content_block_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_stop","index":0}`+"\n\n")...)
+
+	dataBytes = append(dataBytes, []byte("event: content_block_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"content_block_start","index":2,"content_block":{"type":"text","text":""}}`+"\n\n",
+		)...)
+	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"sparse block"}}`+"\n\n",
+		)...)
+	dataBytes = append(dataBytes, []byte("event: content_block_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_stop","index":2}`+"\n\n")...)
+
+	dataBytes = append(dataBytes, []byte("event: message_delta\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":9}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: message_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`+"\n\n")...)
+
+	_, _ = w.Write(dataBytes)
+}
+
+func handlerMessagesStreamSparseContentBlockDeltaIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+
+	var dataBytes []byte
+
+	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"delta block"}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: content_block_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_stop","index":2}`+"\n\n")...)
+
+	dataBytes = append(dataBytes, []byte("event: message_delta\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":9}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: message_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`+"\n\n")...)
+
+	_, _ = w.Write(dataBytes)
+}
+
+func handlerMessagesStreamNegativeContentBlockStartIndex(w http.ResponseWriter, r *http.Request) {
+	writeMessagesStreamWithNegativeContentBlockIndex(
+		w,
+		"content_block_start",
+		`{"type":"content_block_start","index":-1,"content_block":{"type":"text","text":""}}`,
+	)
+}
+
+func handlerMessagesStreamNegativeContentBlockDeltaIndex(w http.ResponseWriter, r *http.Request) {
+	writeMessagesStreamWithNegativeContentBlockIndex(
+		w,
+		"content_block_delta",
+		`{"type":"content_block_delta","index":-1,"delta":{"type":"text_delta","text":"negative index"}}`,
+	)
+}
+
+func handlerMessagesStreamNegativeContentBlockStopIndex(w http.ResponseWriter, r *http.Request) {
+	writeMessagesStreamWithNegativeContentBlockIndex(
+		w,
+		"content_block_stop",
+		`{"type":"content_block_stop","index":-1}`,
+	)
+}
+
+func writeMessagesStreamWithNegativeContentBlockIndex(w http.ResponseWriter, event, data string) {
+	w.Header().Set("Content-Type", "text/event-stream")
+
+	var dataBytes []byte
+
+	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: "+event+"\n")...)
+	dataBytes = append(dataBytes, []byte("data: "+data+"\n\n")...)
 
 	_, _ = w.Write(dataBytes)
 }
