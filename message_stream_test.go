@@ -216,7 +216,11 @@ func TestCreateMessagesStreamHandlesSparseContentBlockIndexes(t *testing.T) {
 		t.Fatalf("Content length mismatch. got %d, want %d", len(resp.Content), 3)
 	}
 	if resp.Content[2].GetText() != "sparse block" {
-		t.Fatalf("Content text mismatch. got %s, want %s", resp.Content[2].GetText(), "sparse block")
+		t.Fatalf(
+			"Content text mismatch. got %s, want %s",
+			resp.Content[2].GetText(),
+			"sparse block",
+		)
 	}
 }
 
@@ -289,15 +293,18 @@ func TestCreateMessagesStreamReturnsErrorForNegativeContentBlockIndexes(t *testi
 				anthropic.WithBaseURL(baseUrl),
 			)
 
-			_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
-				MessagesRequest: anthropic.MessagesRequest{
-					Model: anthropic.ModelClaude3Haiku20240307,
-					Messages: []anthropic.Message{
-						anthropic.NewUserTextMessage("What is your name?"),
+			_, err := client.CreateMessagesStream(
+				context.Background(),
+				anthropic.MessagesStreamRequest{
+					MessagesRequest: anthropic.MessagesRequest{
+						Model: anthropic.ModelClaude3Haiku20240307,
+						Messages: []anthropic.Message{
+							anthropic.NewUserTextMessage("What is your name?"),
+						},
+						MaxTokens: 1000,
 					},
-					MaxTokens: 1000,
 				},
-			})
+			)
 			if err == nil {
 				t.Fatalf("CreateMessagesStream expect error, but not")
 			}
@@ -664,15 +671,27 @@ func handlerMessagesStreamSparseContentBlockDeltaIndex(w http.ResponseWriter, r 
 }
 
 func handlerMessagesStreamNegativeContentBlockStartIndex(w http.ResponseWriter, r *http.Request) {
-	writeMessagesStreamWithNegativeContentBlockIndex(w, "content_block_start", `{"type":"content_block_start","index":-1,"content_block":{"type":"text","text":""}}`)
+	writeMessagesStreamWithNegativeContentBlockIndex(
+		w,
+		"content_block_start",
+		`{"type":"content_block_start","index":-1,"content_block":{"type":"text","text":""}}`,
+	)
 }
 
 func handlerMessagesStreamNegativeContentBlockDeltaIndex(w http.ResponseWriter, r *http.Request) {
-	writeMessagesStreamWithNegativeContentBlockIndex(w, "content_block_delta", `{"type":"content_block_delta","index":-1,"delta":{"type":"text_delta","text":"negative index"}}`)
+	writeMessagesStreamWithNegativeContentBlockIndex(
+		w,
+		"content_block_delta",
+		`{"type":"content_block_delta","index":-1,"delta":{"type":"text_delta","text":"negative index"}}`,
+	)
 }
 
 func handlerMessagesStreamNegativeContentBlockStopIndex(w http.ResponseWriter, r *http.Request) {
-	writeMessagesStreamWithNegativeContentBlockIndex(w, "content_block_stop", `{"type":"content_block_stop","index":-1}`)
+	writeMessagesStreamWithNegativeContentBlockIndex(
+		w,
+		"content_block_stop",
+		`{"type":"content_block_stop","index":-1}`,
+	)
 }
 
 func writeMessagesStreamWithNegativeContentBlockIndex(w http.ResponseWriter, event, data string) {
