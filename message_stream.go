@@ -231,10 +231,10 @@ func (c *Client) CreateMessagesStream(
 				if request.OnContentBlockStart != nil {
 					request.OnContentBlockStart(d)
 				}
-				response.Content, err = growMessageContent(response.Content, d.Index)
-				if err != nil {
+				if err := validateMessageContentIndex(d.Index); err != nil {
 					return response, err
 				}
+				response.Content = growMessageContent(response.Content, d.Index)
 				response.Content[d.Index] = d.ContentBlock
 				continue
 			case MessagesEventContentBlockDelta:
@@ -249,10 +249,7 @@ func (c *Client) CreateMessagesStream(
 					return response, err
 				}
 				if len(response.Content)-1 < d.Index {
-					response.Content, err = growMessageContent(response.Content, d.Index)
-					if err != nil {
-						return response, err
-					}
+					response.Content = growMessageContent(response.Content, d.Index)
 					response.Content[d.Index] = d.Delta
 				} else {
 					response.Content[d.Index].MergeContentDelta(d.Delta)
@@ -312,14 +309,11 @@ func (c *Client) CreateMessagesStream(
 	return
 }
 
-func growMessageContent(content []MessageContent, index int) ([]MessageContent, error) {
-	if err := validateMessageContentIndex(index); err != nil {
-		return content, err
-	}
+func growMessageContent(content []MessageContent, index int) []MessageContent {
 	if len(content) <= index {
 		content = append(content, make([]MessageContent, index-len(content)+1)...)
 	}
-	return content, nil
+	return content
 }
 
 func validateMessageContentIndex(index int) error {
