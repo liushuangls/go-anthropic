@@ -43,6 +43,7 @@ type ThinkingType string
 const (
 	ThinkingTypeEnabled  ThinkingType = "enabled"
 	ThinkingTypeDisabled ThinkingType = "disabled"
+	ThinkingTypeAdaptive ThinkingType = "adaptive"
 )
 
 type MessagesStopReason string
@@ -635,7 +636,8 @@ type Thinking struct {
 	Type ThinkingType `json:"type"`
 	// Determines how many tokens Claude can use for its internal reasoning process. Larger budgets can enable more thorough analysis for complex problems, improving response quality.
 	// Must be ≥1024 and less than max_tokens.
-	BudgetTokens int `json:"budget_tokens"`
+	BudgetTokens int    `json:"budget_tokens,omitempty"`
+	Display      string `json:"display,omitempty"`
 }
 
 type OutputFormat struct {
