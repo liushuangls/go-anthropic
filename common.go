@@ -30,6 +30,7 @@ const (
 	ModelClaudeSonnet4Dot6          Model = "claude-sonnet-4-6"
 	ModelClaudeOpus4Dot6            Model = "claude-opus-4-6"
 	ModelClaudeOpus4Dot7            Model = "claude-opus-4-7"
+	ModelClaudeOpus4Dot8            Model = "claude-opus-4-8"
 )
 
 type ChatRole string
