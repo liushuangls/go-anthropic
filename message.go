@@ -102,8 +102,9 @@ type MessagesRequest struct {
 	ToolChoice    *ToolChoice         `json:"tool_choice,omitempty"`
 	Thinking      *Thinking           `json:"thinking,omitempty"`
 	// Deprecated: Use output_config.format instead.
-	OutputFormat *OutputFormat `json:"output_format,omitempty"`
-	OutputConfig *OutputConfig `json:"output_config,omitempty"`
+	OutputFormat *OutputFormat        `json:"output_format,omitempty"`
+	OutputConfig *OutputConfig        `json:"output_config,omitempty"`
+	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
 func (m MessagesRequest) MarshalJSON() ([]byte, error) {
