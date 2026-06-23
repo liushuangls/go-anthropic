@@ -43,6 +43,7 @@ type ThinkingType string
 const (
 	ThinkingTypeEnabled  ThinkingType = "enabled"
 	ThinkingTypeDisabled ThinkingType = "disabled"
+	ThinkingTypeAdaptive ThinkingType = "adaptive"
 )
 
 type MessagesStopReason string
@@ -58,10 +59,25 @@ const (
 type MessagesContentSourceType string
 
 const (
-	MessagesContentSourceTypeBase64  = "base64"
-	MessagesContentSourceTypeText    = "text"
-	MessagesContentSourceTypeContent = "content"
-	MessagesContentSourceTypeUrl     = "url"
+	MessagesContentSourceTypeBase64  MessagesContentSourceType = "base64"
+	MessagesContentSourceTypeText    MessagesContentSourceType = "text"
+	MessagesContentSourceTypeContent MessagesContentSourceType = "content"
+	MessagesContentSourceTypeUrl     MessagesContentSourceType = "url"
+)
+
+type OutputFormatType string
+
+const (
+	OutputFormatJsonSchema OutputFormatType = "json_schema"
+)
+
+type OutputEffortType string
+
+const (
+	OutputEffortTypeLow    OutputEffortType = "low"
+	OutputEffortTypeMedium OutputEffortType = "medium"
+	OutputEffortTypeHigh   OutputEffortType = "high"
+	OutputEffortTypeMax    OutputEffortType = "max"
 )
 
 type DocumentCitations struct {
@@ -85,6 +101,10 @@ type MessagesRequest struct {
 	Tools         []ToolDefinition    `json:"tools,omitempty"`
 	ToolChoice    *ToolChoice         `json:"tool_choice,omitempty"`
 	Thinking      *Thinking           `json:"thinking,omitempty"`
+	// Deprecated: Use output_config.format instead.
+	OutputFormat *OutputFormat        `json:"output_format,omitempty"`
+	OutputConfig *OutputConfig        `json:"output_config,omitempty"`
+	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
 }
 
 func (m MessagesRequest) MarshalJSON() ([]byte, error) {
@@ -481,15 +501,19 @@ func NewMessageContentSource(
 }
 
 type MessageContentToolUse struct {
-	ID    string          `json:"id,omitempty"`
-	Name  string          `json:"name,omitempty"`
-	Input json.RawMessage `json:"input,omitempty"`
+	ID    string          `json:"id"`
+	Name  string          `json:"name"`
+	Input json.RawMessage `json:"input"`
 }
 
 func NewMessageContentToolUse(
 	toolUseId, name string,
 	input json.RawMessage,
 ) *MessageContentToolUse {
+	if input == nil {
+		input = json.RawMessage(`{}`)
+	}
+
 	return &MessageContentToolUse{
 		ID:    toolUseId,
 		Name:  name,
@@ -539,11 +563,22 @@ type MessagesUsage struct {
 	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
 	// The number of tokens retrieved from the cache for associated request.
 	CacheReadInputTokens int `json:"cache_read_input_tokens,omitempty"`
+	// docs: https://platform.claude.com/docs/en/api/messages/create#message.usage + (resource) messages.cache_creation
+	CacheCreation MessageUsageCacheCreation `json:"cache_creation"`
+}
+
+type MessageUsageCacheCreation struct {
+	Ephemeral1hInputTokens int `json:"ephemeral_1h_input_tokens"`
+	Ephemeral5mInputTokens int `json:"ephemeral_5m_input_tokens"`
 }
 
 type ToolDefinition struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
+	// docs: https://platform.claude.com/docs/en/api/python/messages/create#tool.eager_input_streaming
+	EagerInputStreaming *bool `json:"eager_input_streaming,omitempty"`
+	// docs: https://platform.claude.com/docs/en/api/messages/create#tool.strict
+	Strict *bool `json:"strict,omitempty"`
 	// InputSchema is an object describing the tool.
 	// You can pass json.RawMessage to describe the schema,
 	// or you can pass in a struct which serializes to the proper JSON schema.
@@ -602,7 +637,13 @@ type Thinking struct {
 	Type ThinkingType `json:"type"`
 	// Determines how many tokens Claude can use for its internal reasoning process. Larger budgets can enable more thorough analysis for complex problems, improving response quality.
 	// Must be ≥1024 and less than max_tokens.
-	BudgetTokens int `json:"budget_tokens"`
+	BudgetTokens int    `json:"budget_tokens,omitempty"`
+	Display      string `json:"display,omitempty"`
+}
+
+type OutputFormat struct {
+	Type   OutputFormatType `json:"type"`
+	Schema json.Marshaler   `json:"schema"`
 }
 
 func (c *Client) CreateMessages(
@@ -625,4 +666,9 @@ func (c *Client) CreateMessages(
 
 	err = c.sendRequest(req, &response)
 	return
+}
+
+type OutputConfig struct {
+	Effort OutputEffortType `json:"effort,omitempty"`
+	Format *OutputFormat    `json:"format,omitempty"`
 }

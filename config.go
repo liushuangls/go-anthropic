@@ -30,6 +30,7 @@ const (
 	BetaOutput128k20250219          BetaVersion = "output-128k-2025-02-19"
 	BetaInterleavedThinking20250514 BetaVersion = "interleaved-thinking-2025-05-14"
 	BetaComputerUse20250124         BetaVersion = "computer-use-2025-01-24"
+	BetaStructuredOutputs20251113   BetaVersion = "structured-outputs-2025-11-13"
 )
 
 type ApiKeyFunc func() string

@@ -2,7 +2,9 @@ package integrationtest
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/liushuangls/go-anthropic/v2"
 )
@@ -197,5 +199,143 @@ func TestComputerUse(t *testing.T) {
 		}
 		t.Logf("CreateMessages resp: %+v", resp)
 		t.Logf("CreateMessages resp content: %s", resp.GetFirstContentText())
+	})
+}
+
+func TestJsonOutput(t *testing.T) {
+	testAPIKey(t)
+
+	opts := []anthropic.ClientOption{
+		anthropic.WithBetaVersion(anthropic.BetaStructuredOutputs20251113),
+	}
+
+	if BaseURL != "" {
+		opts = append(opts, anthropic.WithBaseURL(BaseURL))
+	}
+
+	client := anthropic.NewClient(
+		APIKey,
+		opts...,
+	)
+
+	schema := `{
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "email": {"type": "string"},
+          "plan_interest": {"type": "string"},
+          "demo_requested": {"type": "boolean"}
+        },
+        "required": ["name", "email", "plan_interest", "demo_requested"],
+        "additionalProperties": false
+	}`
+
+	req := anthropic.MessagesRequest{
+		Model:     anthropic.ModelClaudeSonnet4Dot5,
+		MaxTokens: 4096,
+		Messages: []anthropic.Message{
+			anthropic.NewUserTextMessage(
+				"Extract the key information from this email: John Smith (john@example.com) is interested in our Enterprise plan and wants to schedule a demo for next Tuesday at 2pm.",
+			),
+		},
+		OutputFormat: &anthropic.OutputFormat{
+			Type:   anthropic.OutputFormatJsonSchema,
+			Schema: json.RawMessage(schema),
+		},
+	}
+
+	t.Run("CreateMessages on real API with json output", func(t *testing.T) {
+		resp, err := client.CreateMessages(t.Context(), req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
+		var output map[string]any
+		err = json.Unmarshal([]byte(resp.GetFirstContentText()), &output)
+		if err != nil {
+			t.Fatalf("Unmarshal json output error: %s", err)
+		}
+		t.Logf("CreateMessages resp output: %+v", output)
+	})
+}
+
+func TestToolUse(t *testing.T) {
+	testAPIKey(t)
+
+	opts := []anthropic.ClientOption{
+		anthropic.WithBetaVersion(anthropic.BetaStructuredOutputs20251113),
+		anthropic.WithHTTPClient(NewHttpPrettyClient(true)),
+	}
+
+	if BaseURL != "" {
+		opts = append(opts, anthropic.WithBaseURL(BaseURL))
+	}
+
+	client := anthropic.NewClient(
+		APIKey,
+		opts...,
+	)
+
+	t.Run("CreateMessages on real API with tool use no input param", func(t *testing.T) {
+		schema := `{
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  }`
+
+		messages := []anthropic.Message{
+			anthropic.NewUserTextMessage(
+				"Use the 'get_current_time' tool to get the current time.",
+			),
+		}
+
+		req := anthropic.MessagesRequest{
+			Model:     anthropic.ModelClaudeHaiku4Dot5,
+			MaxTokens: 4096,
+			Messages:  messages,
+			Tools: []anthropic.ToolDefinition{
+				{
+					Name:        "get_current_time",
+					Description: "Get the current time",
+					InputSchema: json.RawMessage(schema),
+				},
+			},
+		}
+
+		resp, err := client.CreateMessages(t.Context(), req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
+
+		var toolUse *anthropic.MessageContentToolUse
+		for _, content := range resp.Content {
+			if content.Type == anthropic.MessagesContentTypeToolUse {
+				toolUse = content.MessageContentToolUse
+			}
+		}
+		if toolUse == nil {
+			t.Fatalf("No tool use content found")
+		}
+		t.Logf("CreateMessages resp output: %+v", toolUse)
+
+		messages = append(messages, anthropic.Message{
+			Role: anthropic.RoleAssistant,
+			Content: []anthropic.MessageContent{
+				anthropic.NewToolUseMessageContent(toolUse.ID, toolUse.Name, nil),
+			},
+		})
+
+		currentTime := time.Now().Format(time.RFC3339)
+		messages = append(
+			messages,
+			anthropic.NewToolResultsMessage(toolUse.ID, currentTime, false),
+		)
+
+		req.Messages = messages
+
+		resp, err = client.CreateMessages(t.Context(), req)
+		if err != nil {
+			t.Fatalf("CreateMessages error: %s", err)
+		}
 	})
 }
