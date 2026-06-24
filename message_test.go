@@ -676,12 +676,12 @@ func TestMessagesWithCaching(t *testing.T) {
 }
 
 func TestSetCacheControl(t *testing.T) {
-	mc := anthropic.MessageContent{
-		Type: anthropic.MessagesContentTypeText,
-		Text: toPtr("hello"),
-	}
-
 	t.Run("sets cache control", func(t *testing.T) {
+		mc := anthropic.MessageContent{
+			Type: anthropic.MessagesContentTypeText,
+			Text: toPtr("hello"),
+		}
+
 		mc.SetCacheControl(anthropic.CacheControlTypeEphemeral)
 		if mc.CacheControl == nil {
 			t.Fatal("expected cache control to be set")
@@ -694,7 +694,116 @@ func TestSetCacheControl(t *testing.T) {
 				mc.CacheControl.Type,
 			)
 		}
+
+		if mc.CacheControl.TTL != "" {
+			t.Fatalf("expected cache control ttl to be empty, got %s", mc.CacheControl.TTL)
+		}
 	})
+
+	t.Run("sets cache control with 1h ttl", func(t *testing.T) {
+		mc := anthropic.MessageContent{
+			Type: anthropic.MessagesContentTypeText,
+			Text: toPtr("hello"),
+		}
+
+		mc.SetCacheControlTTL(anthropic.CacheControlTypeEphemeral, anthropic.CacheControlTTL1h)
+		if mc.CacheControl == nil {
+			t.Fatal("expected cache control to be set")
+		}
+
+		if mc.CacheControl.Type != anthropic.CacheControlTypeEphemeral {
+			t.Fatalf(
+				"expected cache control type to be %s, got %s",
+				anthropic.CacheControlTypeEphemeral,
+				mc.CacheControl.Type,
+			)
+		}
+
+		if mc.CacheControl.TTL != anthropic.CacheControlTTL1h {
+			t.Fatalf(
+				"expected cache control ttl to be %s, got %s",
+				anthropic.CacheControlTTL1h,
+				mc.CacheControl.TTL,
+			)
+		}
+	})
+
+	t.Run("sets cache control with 5m ttl", func(t *testing.T) {
+		mc := anthropic.MessageContent{
+			Type: anthropic.MessagesContentTypeText,
+			Text: toPtr("hello"),
+		}
+
+		mc.SetCacheControlTTL(anthropic.CacheControlTypeEphemeral, anthropic.CacheControlTTL5m)
+		if mc.CacheControl == nil {
+			t.Fatal("expected cache control to be set")
+		}
+
+		if mc.CacheControl.Type != anthropic.CacheControlTypeEphemeral {
+			t.Fatalf(
+				"expected cache control type to be %s, got %s",
+				anthropic.CacheControlTypeEphemeral,
+				mc.CacheControl.Type,
+			)
+		}
+
+		if mc.CacheControl.TTL != anthropic.CacheControlTTL5m {
+			t.Fatalf(
+				"expected cache control ttl to be %s, got %s",
+				anthropic.CacheControlTTL5m,
+				mc.CacheControl.TTL,
+			)
+		}
+	})
+}
+
+func TestMessageCacheControlMarshalJSON(t *testing.T) {
+	tests := []struct {
+		name         string
+		cacheControl anthropic.MessageCacheControl
+		expected     string
+	}{
+		{
+			name: "marshals without ttl",
+			cacheControl: anthropic.MessageCacheControl{
+				Type: anthropic.CacheControlTypeEphemeral,
+			},
+			expected: `{"type":"ephemeral"}`,
+		},
+		{
+			name: "marshals with 1h ttl",
+			cacheControl: anthropic.MessageCacheControl{
+				Type: anthropic.CacheControlTypeEphemeral,
+				TTL:  anthropic.CacheControlTTL1h,
+			},
+			expected: `{"type":"ephemeral","ttl":"1h"}`,
+		},
+		{
+			name: "marshals with 5m ttl",
+			cacheControl: anthropic.MessageCacheControl{
+				Type: anthropic.CacheControlTypeEphemeral,
+				TTL:  anthropic.CacheControlTTL5m,
+			},
+			expected: `{"type":"ephemeral","ttl":"5m"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bs, err := json.Marshal(tt.cacheControl)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if string(bs) != tt.expected {
+				t.Fatalf(
+					"marshalled MessageCacheControl mismatch. \ngot %s, \nwant %s",
+					string(bs),
+					tt.expected,
+				)
+			}
+		})
+	}
 }
 
 func TestMessagesRequest_MarshalJSON(t *testing.T) {
