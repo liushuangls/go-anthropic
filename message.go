@@ -212,8 +212,16 @@ const (
 	CacheControlTypeEphemeral CacheControlType = "ephemeral"
 )
 
+type CacheControlTTL string
+
+const (
+	CacheControlTTL5m CacheControlTTL = "5m"
+	CacheControlTTL1h CacheControlTTL = "1h"
+)
+
 type MessageCacheControl struct {
 	Type CacheControlType `json:"type"`
+	TTL  CacheControlTTL  `json:"ttl,omitempty"`
 }
 
 type Citation struct {
@@ -396,8 +404,13 @@ func (m *MessageContent) SetCacheControl(ts ...CacheControlType) {
 	if len(ts) > 0 {
 		t = ts[0]
 	}
+	m.SetCacheControlTTL(t, "")
+}
+
+func (m *MessageContent) SetCacheControlTTL(t CacheControlType, ttl CacheControlTTL) {
 	m.CacheControl = &MessageCacheControl{
 		Type: t,
+		TTL:  ttl,
 	}
 }
 
