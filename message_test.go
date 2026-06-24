@@ -1191,3 +1191,182 @@ func handleMessagesEndpoint(headers map[string]string) func(http.ResponseWriter,
 		_, _ = w.Write(resBytes)
 	}
 }
+
+func TestMessagesWebSearch(t *testing.T) {
+
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", func(w http.ResponseWriter, r *http.Request) {
+		var req anthropic.MessagesRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+
+		// Check if this is a request with web search tool results
+		hasWebSearchResult := false
+		for _, msg := range req.Messages {
+			for _, content := range msg.Content {
+				if content.Type == anthropic.MessagesContentTypeWebSearchToolResult {
+					hasWebSearchResult = true
+					break
+				}
+			}
+		}
+
+		var responseJSON string
+
+		if hasWebSearchResult {
+			// Final response with citations - build JSON manually to handle citations field correctly
+			responseJSON = `{
+				"id": "msg_01ABC123",
+				"type": "message",
+				"role": "assistant",
+				"model": "` + string(req.Model) + `",
+				"content": [{
+					"type": "text",
+					"text": "Go is a statically typed, compiled programming language designed at Google",
+					"citations": [{
+						"type": "web_search_result_location",
+						"url": "https://en.wikipedia.org/wiki/Go_(programming_language)",
+						"title": "Go (programming language) - Wikipedia",
+						"cited_text": "Go is a statically typed, compiled programming language designed at Google",
+						"encrypted_index": "encrypted_index_abc123"
+					}]
+				}],
+				"stop_reason": "end_turn",
+				"usage": {
+					"input_tokens": 100,
+					"output_tokens": 200,
+					"server_tool_use": {
+						"web_search_requests": 1
+					}
+				}
+			}`
+		} else {
+			// Initial response with server_tool_use and web_search_tool_result
+			responseJSON = `{
+				"id": "msg_01ABC123",
+				"type": "message",
+				"role": "assistant",
+				"model": "` + string(req.Model) + `",
+				"content": [
+					{
+						"type": "text",
+						"text": "I'll search for information about the Go programming language."
+					},
+					{
+						"type": "server_tool_use",
+						"id": "srvtoolu_01ABC123",
+						"name": "web_search",
+						"input": {"query": "what is go programming language"}
+					},
+					{
+						"type": "web_search_tool_result",
+						"tool_use_id": "srvtoolu_01ABC123",
+						"content": [{
+							"type": "web_search_result",
+							"url": "https://en.wikipedia.org/wiki/Go_(programming_language)",
+							"title": "Go (programming language) - Wikipedia",
+							"encrypted_content": "encrypted_content_xyz789",
+							"page_age": "2025-06-01"
+						}]
+					}
+				],
+				"stop_reason": "pause_turn",
+				"usage": {
+					"input_tokens": 100,
+					"output_tokens": 200
+				}
+			}`
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(responseJSON))
+	})
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	request := anthropic.MessagesRequest{
+		Model: anthropic.ModelClaude3Haiku20240307,
+		Messages: []anthropic.Message{
+			anthropic.NewUserTextMessage("What is the Go programming language?"),
+		},
+		MaxTokens: 1000,
+		Tools: []anthropic.ToolDefinition{
+			{
+				Type: "web_search_20250305",
+				Name: "web_search",
+			},
+		},
+	}
+
+	// First request - Claude decides to search
+	resp, err := client.CreateMessages(context.Background(), request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StopReason != anthropic.MessagesStopReasonPauseTurn {
+		t.Fatalf("Expected stop_reason pause_turn, got: %s", resp.StopReason)
+	}
+
+	// Find the web search result to send back
+	var webSearchResult *anthropic.MessageContent
+	for i, c := range resp.Content {
+		if c.Type == anthropic.MessagesContentTypeWebSearchToolResult {
+			webSearchResult = &resp.Content[i]
+		}
+	}
+
+	if webSearchResult == nil {
+		t.Fatal("web_search_tool_result not found in response")
+	}
+
+	// Add the assistant's response to the conversation
+	request.Messages = append(request.Messages, anthropic.Message{
+		Role:    anthropic.RoleAssistant,
+		Content: resp.Content,
+	})
+
+	// Second request - Continue with the search results
+	resp, err = client.CreateMessages(context.Background(), request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("Final response: %+v", resp)
+
+	// Verify we got citations in the final response
+	var hasCitations bool
+	for _, content := range resp.Content {
+		if len(content.Citations) > 0 {
+			hasCitations = true
+			for _, citation := range content.Citations {
+				if citation.Type == anthropic.CitationTypeWebSearchResultLocation {
+					t.Logf("Citation: %s - %s", *citation.Url, *citation.Title)
+				}
+			}
+		}
+	}
+
+	if !hasCitations {
+		t.Fatal("Expected citations in final response")
+	}
+
+	// Verify usage tracking
+	if resp.Usage.ServerToolUse == nil {
+		t.Fatal("Expected ServerToolUse in usage tracking")
+	}
+
+	if resp.Usage.ServerToolUse.WebSearchRequests != 1 {
+		t.Fatalf(
+			"Expected 1 web search request, got: %d",
+			resp.Usage.ServerToolUse.WebSearchRequests,
+		)
+	}
+}
