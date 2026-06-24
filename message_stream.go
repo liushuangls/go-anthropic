@@ -266,9 +266,20 @@ func (c *Client) CreateMessagesStream(
 				}
 				if len(response.Content) > d.Index {
 					stopContent = response.Content[d.Index]
-					if stopContent.Type == MessagesContentTypeToolUse {
+					switch stopContent.Type {
+					case MessagesContentTypeToolUse:
 						if stopContent.PartialJson != nil {
-							stopContent.Input = json.RawMessage(*stopContent.PartialJson)
+							stopContent.MessageContentToolUse.Input = json.RawMessage(
+								*stopContent.PartialJson,
+							)
+						}
+						stopContent.PartialJson = nil
+						response.Content[d.Index] = stopContent
+					case MessagesContentTypeServerToolUse:
+						if stopContent.PartialJson != nil {
+							stopContent.MessageContentServerToolUse.Input = json.RawMessage(
+								*stopContent.PartialJson,
+							)
 						}
 						stopContent.PartialJson = nil
 						response.Content[d.Index] = stopContent
