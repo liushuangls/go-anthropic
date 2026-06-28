@@ -202,7 +202,10 @@ func (c *Client) CreateMessagesStream(
 				if request.OnError != nil {
 					request.OnError(eventData)
 				}
-				return response, eventData.Error
+				if eventData.Error != nil {
+					return response, eventData.Error
+				}
+				return response, fmt.Errorf("stream error event with no error detail")
 			case MessagesEventPing:
 				var d MessagesEventPingData
 				if err := json.Unmarshal(data, &d); err != nil {
