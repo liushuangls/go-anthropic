@@ -138,7 +138,9 @@ func (c *Client) newRequest(
 	req.Header.Set("Accept", "application/json; charset=utf-8")
 
 	// set any provider-specific headers (including Authorization)
-	c.config.Adapter.SetRequestHeaders(c, req)
+	if err := c.config.Adapter.SetRequestHeaders(c, req); err != nil {
+		return nil, err
+	}
 
 	for _, setter := range requestSetters {
 		setter(req)
