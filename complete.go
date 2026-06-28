@@ -14,7 +14,7 @@ type CompleteRequest struct {
 	Temperature   *float32       `json:"temperature,omitempty"`
 	TopP          *float32       `json:"top_p,omitempty"`
 	TopK          *int           `json:"top_k,omitempty"`
-	MetaData      map[string]any `json:"meta_data,omitempty"`
+	MetaData      map[string]any `json:"metadata,omitempty"`
 	Stream        bool           `json:"stream,omitempty"`
 }
 
