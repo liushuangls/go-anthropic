@@ -532,21 +532,25 @@ func (m *MessageContent) MergeContentDelta(mc MessageContent) {
 	case MessagesContentTypeToolResult:
 		m.MessageContentToolResult = mc.MessageContentToolResult
 	case MessagesContentTypeToolUse:
-		m.MessageContentToolUse = &MessageContentToolUse{
-			ID:   mc.MessageContentToolUse.ID,
-			Name: mc.MessageContentToolUse.Name,
+		if mc.MessageContentToolUse != nil {
+			m.MessageContentToolUse = &MessageContentToolUse{
+				ID:   mc.MessageContentToolUse.ID,
+				Name: mc.MessageContentToolUse.Name,
+			}
 		}
 	case MessagesContentTypeServerToolUse:
-		m.MessageContentServerToolUse = &MessageContentServerToolUse{
-			ID:   mc.MessageContentServerToolUse.ID,
-			Name: mc.MessageContentServerToolUse.Name,
+		if mc.MessageContentServerToolUse != nil {
+			m.MessageContentServerToolUse = &MessageContentServerToolUse{
+				ID:   mc.MessageContentServerToolUse.ID,
+				Name: mc.MessageContentServerToolUse.Name,
+			}
 		}
 	case MessagesContentTypeWebSearchToolResult:
 		m.MessageContentWebSearchToolResult = mc.MessageContentWebSearchToolResult
 	case MessagesContentTypeInputJsonDelta:
 		if m.PartialJson == nil {
 			m.PartialJson = mc.PartialJson
-		} else {
+		} else if mc.PartialJson != nil {
 			*m.PartialJson += *mc.PartialJson
 		}
 	case MessagesContentTypeCitationsDelta:
@@ -561,7 +565,7 @@ func (m *MessageContent) MergeContentDelta(mc MessageContent) {
 		MessagesContentTypeSignatureDelta:
 		if m.MessageContentThinking == nil {
 			m.MessageContentThinking = mc.MessageContentThinking
-		} else {
+		} else if mc.MessageContentThinking != nil {
 			m.MessageContentThinking.Thinking += mc.MessageContentThinking.Thinking
 			if mc.MessageContentThinking.Signature != "" {
 				m.MessageContentThinking.Signature = mc.MessageContentThinking.Signature
