@@ -861,6 +861,87 @@ func handlerMessagesStreamToolUseWithoutParameters(w http.ResponseWriter, r *htt
 	_, _ = w.Write(dataBytes)
 }
 
+func TestCreateMessagesStreamIgnoresCommentsAndUnknownEvents(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handlerMessagesStreamCommentsAndUnknownEvents)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	// A small limit ensures the test fails if comment/unknown lines were
+	// counted against the empty-message budget.
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithEmptyMessagesLimit(5),
+	)
+
+	var received string
+	_, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+		MessagesRequest: anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		},
+		OnContentBlockDelta: func(data anthropic.MessagesEventContentBlockDeltaData) {
+			received += data.Delta.GetText()
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateMessagesStream unexpected error: %s", err)
+	}
+	if received != "hello" {
+		t.Fatalf("expected content %q, got %q", "hello", received)
+	}
+}
+
+func handlerMessagesStreamCommentsAndUnknownEvents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+
+	var dataBytes []byte
+
+	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: content_block_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`+"\n\n",
+		)...)
+
+	// Many SSE comment lines (proxy keep-alives) and unknown/future event
+	// types, far exceeding the empty-message limit of 5.
+	for i := 0; i < 50; i++ {
+		dataBytes = append(dataBytes, []byte(": keep-alive\n\n")...)
+		dataBytes = append(dataBytes, []byte("event: some_future_event\n")...)
+		dataBytes = append(dataBytes, []byte(`data: {"type":"some_future_event"}`+"\n\n")...)
+	}
+
+	dataBytes = append(dataBytes, []byte("event: content_block_delta\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hello"}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: content_block_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"content_block_stop","index":0}`+"\n\n")...)
+
+	dataBytes = append(dataBytes, []byte("event: message_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`+"\n\n")...)
+
+	_, _ = w.Write(dataBytes)
+}
+
 func handlerMessagesStreamEmptyMessages(numEmptyMessages int, payload string) test.Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, err := getRequest[anthropic.MessagesRequest](r)

@@ -12,8 +12,11 @@ import (
 )
 
 var (
-	eventPrefix                   = []byte("event:")
-	dataPrefix                    = []byte("data:")
+	eventPrefix = []byte("event:")
+	dataPrefix  = []byte("data:")
+	// commentPrefix marks an SSE comment line (e.g. proxy keep-alives). Per the
+	// SSE spec these must be ignored.
+	commentPrefix                 = []byte(":")
 	ErrTooManyEmptyStreamMessages = errors.New("stream has sent too many empty messages")
 )
 
@@ -184,6 +187,11 @@ func (c *Client) CreateMessagesStream(
 		if len(noSpaceLine) == 0 {
 			continue
 		}
+		// SSE comment lines (proxy keep-alives) must be ignored without
+		// counting against the empty-message budget.
+		if bytes.HasPrefix(noSpaceLine, commentPrefix) {
+			continue
+		}
 		if bytes.HasPrefix(noSpaceLine, eventPrefix) {
 			event = bytes.TrimSpace(bytes.TrimPrefix(noSpaceLine, eventPrefix))
 			continue
@@ -193,6 +201,9 @@ func (c *Client) CreateMessagesStream(
 				data      = bytes.TrimPrefix(noSpaceLine, dataPrefix)
 				eventType = MessagesEvent(event)
 			)
+			// A genuine SSE data event was received; reset the lifetime
+			// empty-message counter so healthy long streams are never aborted.
+			emptyMessageCount = 0
 			switch eventType {
 			case MessagesEventError:
 				var eventData ErrorResponse
@@ -314,6 +325,10 @@ func (c *Client) CreateMessagesStream(
 				if request.OnMessageStop != nil {
 					request.OnMessageStop(d)
 				}
+				continue
+			default:
+				// Unknown or future event type. Per the SSE spec it must be
+				// ignored rather than counted against the empty-message budget.
 				continue
 			}
 		}
