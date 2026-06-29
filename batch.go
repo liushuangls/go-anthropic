@@ -254,7 +254,9 @@ func (c *Client) ListBatches(
 	}
 
 	// encode the query parameters into the URL
-	urlSuffix += "?" + v.Encode()
+	if encoded := v.Encode(); encoded != "" {
+		urlSuffix += "?" + encoded
+	}
 	req, err := c.newRequest(ctx, http.MethodGet, urlSuffix, nil, setters...)
 	if err != nil {
 		return nil, err
