@@ -170,38 +170,30 @@ func (c *Client) RetrieveBatchResults(
 		return nil, err
 	}
 
-	response.RawResponse, err = io.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	response.Responses, err = decodeRawResponse(response.RawResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, err
-}
-
-func decodeRawResponse(rawResponse []byte) ([]BatchResult, error) {
-	// This looks fishy, but this logic works.
-	// https://goplay.tools/snippet/tDPm3GJVv0_s
-	var results []BatchResult
-	for _, line := range bytes.Split(rawResponse, []byte("\n")) {
-		if len(line) == 0 {
-			continue
-		}
-
+	// Decode the .jsonl body in a single streaming pass. A json.Decoder reads
+	// one JSON value at a time and treats inter-record newlines as whitespace,
+	// so there is no per-line length limit (records can exceed 64KB) and we
+	// avoid the previous re-parse of the whole body via bytes.Split.
+	//
+	// RawResponse is a public field kept for backward compatibility. It is
+	// populated via a TeeReader as the body is consumed. Note the memory cost:
+	// the full (potentially multi-GB) body is retained in addition to the
+	// parsed Responses. Callers that only need Responses can ignore it.
+	var rawBuf bytes.Buffer
+	dec := json.NewDecoder(io.TeeReader(res.Body, &rawBuf))
+	for {
 		var parsed BatchResult
-		err := json.Unmarshal(line, &parsed)
-		if err != nil {
-			return nil, err
+		if decErr := dec.Decode(&parsed); decErr != nil {
+			if errors.Is(decErr, io.EOF) {
+				break
+			}
+			return nil, decErr
 		}
-
-		results = append(results, parsed)
+		response.Responses = append(response.Responses, parsed)
 	}
+	response.RawResponse = rawBuf.Bytes()
 
-	return results, nil
+	return &response, nil
 }
 
 type ListBatchesResponse struct {
