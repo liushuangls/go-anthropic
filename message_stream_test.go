@@ -586,6 +586,71 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(dataBytes)
 }
 
+func TestCreateMessagesStreamDeliversFinalEventWithoutTrailingNewline(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handlerMessagesStreamNoTrailingNewline)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	var gotMessageStop bool
+	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+		MessagesRequest: anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+			},
+			MaxTokens: 1000,
+		},
+		OnMessageStop: func(data anthropic.MessagesEventMessageStopData) {
+			gotMessageStop = true
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateMessagesStream error: %s", err)
+	}
+
+	if !gotMessageStop {
+		t.Fatalf("final message_stop event without trailing newline was not delivered")
+	}
+	if resp.StopReason != anthropic.MessagesStopReasonEndTurn {
+		t.Fatalf("expected stop reason end_turn, got %q", resp.StopReason)
+	}
+}
+
+func handlerMessagesStreamNoTrailingNewline(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+
+	var dataBytes []byte
+
+	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: message_delta\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":9}}`+"\n\n",
+		)...)
+
+	// Final frame intentionally has NO trailing newline.
+	dataBytes = append(dataBytes, []byte("event: message_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`)...)
+
+	_, _ = w.Write(dataBytes)
+}
+
 func handlerMessagesStreamSparseContentBlockIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 
