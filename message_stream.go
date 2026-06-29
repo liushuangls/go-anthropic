@@ -332,8 +332,14 @@ func growMessageContent(content []MessageContent, index int) []MessageContent {
 	return content
 }
 
+// maxStreamContentBlockIndex caps the content block index accepted from the
+// wire. The index is attacker/server controlled; an absurdly large value would
+// otherwise force growMessageContent to allocate a gigantic slice (OOM) or
+// panic in makeslice. Real responses never approach this bound.
+const maxStreamContentBlockIndex = 100000
+
 func validateMessageContentIndex(index int) error {
-	if index < 0 {
+	if index < 0 || index > maxStreamContentBlockIndex {
 		return fmt.Errorf("invalid content block index: %d", index)
 	}
 	return nil
