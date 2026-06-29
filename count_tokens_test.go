@@ -3,6 +3,7 @@ package anthropic_test
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -45,32 +46,52 @@ func TestCountTokens(t *testing.T) {
 		t.Logf("CountTokens resp: %+v", resp)
 	})
 
-	t.Run("count tokens failure", func(t *testing.T) {
-		request.MaxTokens = 10
-		_, err := client.CountTokens(context.Background(), request)
-		if err == nil {
-			t.Fatalf("CountTokens expected error, got nil")
+	t.Run("count tokens omits max_tokens even when set", func(t *testing.T) {
+		// The count_tokens endpoint rejects max_tokens. Even if the caller
+		// populates MaxTokens on the MessagesRequest, the SDK must not send
+		// it. The mock handler 400s if the raw body carries max_tokens.
+		req := request
+		req.MaxTokens = 10
+		resp, err := client.CountTokens(context.Background(), req)
+		if err != nil {
+			t.Fatalf("CountTokens error: %v", err)
 		}
 
-		t.Logf("CountTokens error: %v", err)
+		t.Logf("CountTokens resp: %+v", resp)
 	})
 }
 
 func handleCountTokens(w http.ResponseWriter, r *http.Request) {
-	var err error
 	var resBytes []byte
 
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 
-	var req anthropic.MessagesRequest
-	if req, err = getRequest[anthropic.MessagesRequest](r); err != nil {
+	rawBody, err := io.ReadAll(r.Body)
+	if err != nil {
 		http.Error(w, "could not read request", http.StatusInternalServerError)
 		return
 	}
-	if req.MaxTokens > 0 {
+
+	// The count_tokens endpoint rejects extra inputs such as max_tokens.
+	// Inspect the raw bytes so an always-present "max_tokens":0 cannot slip
+	// through. The endpoint returns 400 "Extra inputs are not permitted".
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(rawBody, &raw); err != nil {
+		http.Error(w, "could not read request", http.StatusInternalServerError)
+		return
+	}
+	if _, ok := raw["max_tokens"]; ok {
 		http.Error(w, "max_tokens: Extra inputs are not permitted", http.StatusBadRequest)
+		return
+	}
+	if _, ok := raw["model"]; !ok {
+		http.Error(w, "model: Field required", http.StatusBadRequest)
+		return
+	}
+	if _, ok := raw["messages"]; !ok {
+		http.Error(w, "messages: Field required", http.StatusBadRequest)
 		return
 	}
 
