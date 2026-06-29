@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -90,7 +91,10 @@ func (c *Client) CreateCompleteStream(
 				if request.OnError != nil {
 					request.OnError(d)
 				}
-				return response, d.Error
+				if d.Error != nil {
+					return response, d.Error
+				}
+				return response, fmt.Errorf("stream error event with no error detail")
 			case CompleteEventPing:
 				var d CompleteStreamPingData
 				if err := json.Unmarshal(data, &d); err != nil {
