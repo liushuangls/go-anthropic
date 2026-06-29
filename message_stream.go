@@ -305,6 +305,15 @@ func (c *Client) CreateMessagesStream(
 				response.StopReason = d.Delta.StopReason
 				response.StopSequence = d.Delta.StopSequence
 				response.Usage.OutputTokens = d.Usage.OutputTokens
+				// The final message_delta also reports cumulative server tool
+				// usage (e.g. web-search request counts) and cache creation
+				// details that are only present here; merge them when set.
+				if d.Usage.ServerToolUse != nil {
+					response.Usage.ServerToolUse = d.Usage.ServerToolUse
+				}
+				if d.Usage.CacheCreation != (MessageUsageCacheCreation{}) {
+					response.Usage.CacheCreation = d.Usage.CacheCreation
+				}
 				continue
 			case MessagesEventMessageStop:
 				var d MessagesEventMessageStopData
