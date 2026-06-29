@@ -88,9 +88,12 @@ func newRateLimitHeaders(h http.Header) (RateLimitHeaders, error) {
 	headers.RequestsRemaining = parseIntHeader(requestsRemaining, false)
 	headers.RequestsReset = parseTimeHeader(requestsReset, false)
 
-	headers.TokensLimit = parseIntHeader(tokensLimit, true)
-	headers.TokensRemaining = parseIntHeader(tokensRemaining, true)
-	headers.TokensReset = parseTimeHeader(tokensReset, true)
+	// The combined tokens-* headers are omitted on count_tokens, batch, and
+	// split-token responses, so they must be optional like the others;
+	// otherwise GetRateLimitHeaders errors on otherwise-valid responses.
+	headers.TokensLimit = parseIntHeader(tokensLimit, false)
+	headers.TokensRemaining = parseIntHeader(tokensRemaining, false)
+	headers.TokensReset = parseTimeHeader(tokensReset, false)
 
 	headers.InputTokensLimit = parseIntHeader(inputTokensLimit, false)
 	headers.InputTokensRemaining = parseIntHeader(inputTokensRemaining, false)

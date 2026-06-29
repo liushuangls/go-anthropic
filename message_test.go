@@ -580,7 +580,9 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 		})
 	}
 
-	t.Run("returns error for missing rate limit headers", func(t *testing.T) {
+	t.Run("no error for missing rate limit headers", func(t *testing.T) {
+		// All rate limit headers (including the combined tokens-* headers) are
+		// optional, so a response that omits them must not produce an error.
 		invalidHeaders := map[string]string{}
 		resp, err := getRespWithHeaders(invalidHeaders)
 		if err != nil {
@@ -588,8 +590,8 @@ func TestMessagesRateLimitHeaders(t *testing.T) {
 		}
 
 		_, err = resp.GetRateLimitHeaders()
-		if err == nil {
-			t.Fatal("expected error, got nil")
+		if err != nil {
+			t.Fatalf("expected no error for missing rate limit headers, got: %v", err)
 		}
 	})
 }
