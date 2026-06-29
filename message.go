@@ -89,10 +89,10 @@ type DocumentCitations struct {
 }
 
 type MessagesRequest struct {
-	Model            Model     `json:"model,omitempty"`
+	Model            Model     `json:"model"`
 	AnthropicVersion string    `json:"anthropic_version,omitempty"`
 	Messages         []Message `json:"messages"`
-	MaxTokens        int       `json:"max_tokens,omitempty"`
+	MaxTokens        int       `json:"max_tokens"`
 
 	System        string              `json:"-"`
 	MultiSystem   []MessageSystemPart `json:"-"`
