@@ -290,6 +290,65 @@ type MessageContent struct {
 	*MessageContentRedactedThinking
 }
 
+// MarshalJSON implements custom JSON marshaling for MessageContent.
+//
+// MessageContent embeds several pointer structs (tool_use, server_tool_use,
+// tool_result, web_search_tool_result) that declare overlapping JSON field
+// names — for example both MessageContentToolResult and
+// MessageContentWebSearchToolResult define "tool_use_id" and "content", and
+// both MessageContentToolUse and MessageContentServerToolUse define "id",
+// "name" and "input". Go's encoding/json drops fields that are ambiguous across
+// embedded structs at the same depth, which would silently strip "tool_use_id",
+// "content", "id", "name" and "input" from the wire payload.
+//
+// To produce a correct payload we marshal the base struct (which omits the
+// ambiguous fields) and then merge back the fields of whichever embedded tool
+// struct is actually populated. Blocks without an ambiguous embedded struct
+// (text, image, document, thinking, …) are marshaled exactly as before.
+func (m MessageContent) MarshalJSON() ([]byte, error) {
+	type Alias MessageContent
+	base, err := json.Marshal(Alias(m))
+	if err != nil {
+		return nil, err
+	}
+
+	var extra any
+	switch {
+	case m.MessageContentToolResult != nil:
+		extra = m.MessageContentToolResult
+	case m.MessageContentToolUse != nil:
+		extra = m.MessageContentToolUse
+	case m.MessageContentServerToolUse != nil:
+		extra = m.MessageContentServerToolUse
+	case m.MessageContentWebSearchToolResult != nil:
+		extra = m.MessageContentWebSearchToolResult
+	}
+
+	if extra == nil {
+		// No ambiguous embedded struct; preserve the original encoding.
+		return base, nil
+	}
+
+	merged := map[string]json.RawMessage{}
+	if err := json.Unmarshal(base, &merged); err != nil {
+		return nil, err
+	}
+
+	extraBytes, err := json.Marshal(extra)
+	if err != nil {
+		return nil, err
+	}
+	extraFields := map[string]json.RawMessage{}
+	if err := json.Unmarshal(extraBytes, &extraFields); err != nil {
+		return nil, err
+	}
+	for k, v := range extraFields {
+		merged[k] = v
+	}
+
+	return json.Marshal(merged)
+}
+
 // UnmarshalJSON implements custom JSON unmarshaling for MessageContent
 func (m *MessageContent) UnmarshalJSON(data []byte) error {
 	// First, unmarshal to get the type field
