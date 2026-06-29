@@ -113,3 +113,57 @@ func strPtr(s string) *string {
 func intPtr(i int) *int {
 	return &i
 }
+
+func TestMessageContentCitationsRoundTrip(t *testing.T) {
+	input := `{
+		"type": "text",
+		"text": "the grass is green",
+		"citations": [
+			{
+				"type": "char_location",
+				"cited_text": "The grass is green.",
+				"document_index": 0,
+				"document_title": "My Document",
+				"start_char_index": 0,
+				"end_char_index": 20
+			}
+		]
+	}`
+
+	var mc MessageContent
+	if err := json.Unmarshal([]byte(input), &mc); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	assert.Len(t, mc.Citations, 1)
+
+	out, err := json.Marshal(mc)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+
+	// Must emit the API key "citations", not the internal "citations_list".
+	assert.Contains(t, string(out), `"citations"`)
+	assert.NotContains(t, string(out), "citations_list")
+
+	// Re-unmarshal to confirm the citation survives the round trip.
+	var rt MessageContent
+	if err := json.Unmarshal(out, &rt); err != nil {
+		t.Fatalf("re-unmarshal error: %v", err)
+	}
+	assert.Len(t, rt.Citations, 1)
+	assert.Equal(t, "The grass is green.", rt.Citations[0].CitedText)
+	assert.Equal(t, CitationTypeCharLocation, rt.Citations[0].Type)
+}
+
+func TestMessageContentDocumentCitationsStillMarshal(t *testing.T) {
+	// Request-side document blocks must still emit DocumentCitations under
+	// the "citations" key.
+	doc := NewTextDocumentMessageContent("some text", "Title", "Context", true)
+
+	out, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	assert.Contains(t, string(out), `"citations":{"enabled":true}`)
+	assert.NotContains(t, string(out), "citations_list")
+}
