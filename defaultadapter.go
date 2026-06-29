@@ -1,8 +1,8 @@
 package anthropic
 
 import (
-	"fmt"
 	"net/http"
+	"strings"
 )
 
 var _ ClientAdapter = (*DefaultAdapter)(nil)
@@ -15,8 +15,9 @@ func (v *DefaultAdapter) TranslateError(resp *http.Response, body []byte) (error
 }
 
 func (v *DefaultAdapter) fullURL(baseUrl string, suffix string) string {
-	// replace the first slash with a colon
-	return fmt.Sprintf("%s%s", baseUrl, suffix)
+	// Trim a trailing slash so a BaseURL ending in "/" doesn't yield a double
+	// slash (e.g. ".../v1//messages"). suffix always begins with "/".
+	return strings.TrimRight(baseUrl, "/") + suffix
 }
 
 func (v *DefaultAdapter) PrepareRequest(
