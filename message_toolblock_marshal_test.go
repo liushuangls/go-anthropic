@@ -27,7 +27,13 @@ func TestToolResultMarshalIncludesFields(t *testing.T) {
 }
 
 func TestToolUseMarshalIncludesFields(t *testing.T) {
-	b, err := json.Marshal(anthropic.NewToolUseMessageContent("toolu_123", "get_weather", json.RawMessage(`{"city":"NYC"}`)))
+	b, err := json.Marshal(
+		anthropic.NewToolUseMessageContent(
+			"toolu_123",
+			"get_weather",
+			json.RawMessage(`{"city":"NYC"}`),
+		),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +45,13 @@ func TestToolUseMarshalIncludesFields(t *testing.T) {
 }
 
 func TestServerToolUseMarshalIncludesFields(t *testing.T) {
-	b, err := json.Marshal(anthropic.NewServerToolUseContent("srvtoolu_1", "web_search", json.RawMessage(`{"query":"golang"}`)))
+	b, err := json.Marshal(
+		anthropic.NewServerToolUseContent(
+			"srvtoolu_1",
+			"web_search",
+			json.RawMessage(`{"query":"golang"}`),
+		),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +68,8 @@ func TestTextBlockMarshalUnchanged(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(b), `"type":"text"`) || !strings.Contains(string(b), `"text":"hello"`) {
+	if !strings.Contains(string(b), `"type":"text"`) ||
+		!strings.Contains(string(b), `"text":"hello"`) {
 		t.Errorf("text block marshal changed unexpectedly: %s", b)
 	}
 }
