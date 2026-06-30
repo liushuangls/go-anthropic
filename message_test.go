@@ -1370,3 +1370,51 @@ func TestMessagesWebSearch(t *testing.T) {
 		)
 	}
 }
+
+func TestCitationTypePageLocation(t *testing.T) {
+	if anthropic.CitationTypePageLocation != "page_location" {
+		t.Fatalf("unexpected value: %q", anthropic.CitationTypePageLocation)
+	}
+
+	body := `{"type":"text","text":"x","citations":[{"type":"page_location","cited_text":"y","document_index":0}]}`
+	var mc anthropic.MessageContent
+	if err := json.Unmarshal([]byte(body), &mc); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if len(mc.Citations) != 1 {
+		t.Fatalf("expected 1 citation, got %d", len(mc.Citations))
+	}
+	if mc.Citations[0].Type != anthropic.CitationTypePageLocation {
+		t.Fatalf("unexpected citation type: %q", mc.Citations[0].Type)
+	}
+}
+
+func TestCitationPageNumberFields(t *testing.T) {
+	body := `{
+		"type": "text",
+		"text": "x",
+		"citations": [
+			{
+				"type": "page_location",
+				"cited_text": "y",
+				"document_index": 0,
+				"start_page_number": 3,
+				"end_page_number": 5
+			}
+		]
+	}`
+	var mc anthropic.MessageContent
+	if err := json.Unmarshal([]byte(body), &mc); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if len(mc.Citations) != 1 {
+		t.Fatalf("expected 1 citation, got %d", len(mc.Citations))
+	}
+	c := mc.Citations[0]
+	if c.StartPage == nil || *c.StartPage != 3 {
+		t.Fatalf("unexpected start_page_number: %v", c.StartPage)
+	}
+	if c.EndPage == nil || *c.EndPage != 5 {
+		t.Fatalf("unexpected end_page_number: %v", c.EndPage)
+	}
+}

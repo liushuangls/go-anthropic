@@ -36,7 +36,7 @@ type CitationType string
 
 const (
 	CitationTypeCharLocation            CitationType = "char_location"
-	CitationTypePageNumber              CitationType = "page_number"
+	CitationTypePageLocation            CitationType = "page_location"
 	CitationTypeBlockIndex              CitationType = "block_index"
 	CitationTypeWebSearchResultLocation CitationType = "web_search_result_location"
 )
@@ -238,9 +238,9 @@ type Citation struct {
 	StartCharIndex *int `json:"start_char_index,omitempty"`
 	EndCharIndex   *int `json:"end_char_index,omitempty"`
 
-	// For page_number citations
-	StartPage *int `json:"start_page,omitempty"`
-	EndPage   *int `json:"end_page,omitempty"`
+	// For page_location citations
+	StartPage *int `json:"start_page_number,omitempty"`
+	EndPage   *int `json:"end_page_number,omitempty"`
 
 	// For block_index citations
 	StartBlockIndex *int `json:"start_block_index,omitempty"`
