@@ -29,7 +29,7 @@ type Definition struct {
 	// one element, where each element is unique. You will probably only use this with strings.
 	Enum []string `json:"enum,omitempty"`
 	// Properties describes the properties of an object, if the schema type is Object.
-	Properties map[string]Definition `json:"properties"`
+	Properties map[string]Definition `json:"properties,omitempty"`
 	// Required specifies which properties are required, if the schema type is Object.
 	Required []string `json:"required,omitempty"`
 	// Items specifies which data type an array contains, if the schema type is Array.
@@ -37,7 +37,9 @@ type Definition struct {
 }
 
 func (d Definition) MarshalJSON() ([]byte, error) {
-	if d.Properties == nil {
+	// Only object schemas carry a properties map. Forcing it onto scalars and
+	// array items previously emitted a spurious "properties":{} on every node.
+	if d.Type == Object && d.Properties == nil {
 		d.Properties = make(map[string]Definition)
 	}
 	type Alias Definition
