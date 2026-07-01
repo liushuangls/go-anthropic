@@ -118,8 +118,11 @@ func (c *Client) RetrieveBatch(
 }
 
 type BatchResultCore struct {
-	Type   ResultType       `json:"type"`
+	Type ResultType `json:"type"`
+	// Result holds the message for results with type "succeeded".
 	Result MessagesResponse `json:"message"`
+	// Error holds the error envelope for results with type "errored".
+	Error *ErrorResponse `json:"error,omitempty"`
 }
 
 type BatchResult struct {

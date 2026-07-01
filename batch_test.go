@@ -518,3 +518,26 @@ func forgeBatchResponse(batchId string) anthropic.BatchRespCore {
 		ResultsUrl:        nil,
 	}
 }
+
+func TestBatchResultErrored(t *testing.T) {
+	line := `{"custom_id":"req-1","result":{"type":"errored","error":{"type":"error","error":{"type":"invalid_request_error","message":"bad request"}}}}`
+
+	var parsed anthropic.BatchResult
+	if err := json.Unmarshal([]byte(line), &parsed); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+
+	if parsed.Result.Type != anthropic.ResultTypeErrored {
+		t.Fatalf("unexpected result type: %s", parsed.Result.Type)
+	}
+	if parsed.Result.Error == nil {
+		t.Fatalf("expected error envelope, got nil")
+	}
+	if parsed.Result.Error.Error == nil ||
+		parsed.Result.Error.Error.Type != anthropic.ErrTypeInvalidRequest {
+		t.Fatalf("unexpected error payload: %+v", parsed.Result.Error)
+	}
+	if parsed.Result.Error.Error.Message != "bad request" {
+		t.Fatalf("unexpected error message: %q", parsed.Result.Error.Error.Message)
+	}
+}
