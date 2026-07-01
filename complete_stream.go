@@ -63,10 +63,16 @@ func (c *Client) CreateCompleteStream(
 	for {
 		rawLine, readErr := reader.ReadBytes('\n')
 		if readErr != nil {
-			if errors.Is(readErr, io.EOF) {
+			if !errors.Is(readErr, io.EOF) {
+				return response, readErr
+			}
+			// ReadBytes returns the final bytes together with io.EOF when the
+			// last frame has no trailing newline. If there is nothing left to
+			// process we are done; otherwise fall through and handle the frame
+			// before the next read breaks here.
+			if len(bytes.TrimSpace(rawLine)) == 0 {
 				break
 			}
-			return response, readErr
 		}
 
 		noSpaceLine := bytes.TrimSpace(rawLine)
