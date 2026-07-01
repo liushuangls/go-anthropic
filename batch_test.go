@@ -253,6 +253,91 @@ func handleRetrieveBatchResultsEndpoint(w http.ResponseWriter, r *http.Request) 
 	_, _ = w.Write(resBytes)
 }
 
+func TestRetrieveBatchResultsJSONL(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler(
+		"/v1/messages/batches/batch_id_jsonl/results",
+		handleRetrieveBatchResultsJSONLEndpoint,
+	)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+		anthropic.WithBetaVersion(anthropic.BetaMessageBatches20240924),
+	)
+
+	resp, err := client.RetrieveBatchResults(context.Background(), "batch_id_jsonl")
+	if err != nil {
+		t.Fatalf("RetrieveBatchResults error: %s", err)
+	}
+
+	if len(resp.Responses) != 3 {
+		t.Fatalf("expected 3 responses, got %d", len(resp.Responses))
+	}
+
+	for i, r := range resp.Responses {
+		wantID := "custom_id_" + strconv.Itoa(i)
+		if r.CustomId != wantID {
+			t.Fatalf("response %d: expected custom_id %q, got %q", i, wantID, r.CustomId)
+		}
+		if r.Result.Type != anthropic.ResultTypeSucceeded {
+			t.Fatalf("response %d: expected result type succeeded, got %q", i, r.Result.Type)
+		}
+	}
+
+	// The middle record is larger than bufio.Scanner's default 64KB buffer,
+	// so it must decode intact without truncation.
+	bigText := resp.Responses[1].Result.Result.GetFirstContentText()
+	if len(bigText) < 64*1024 {
+		t.Fatalf("expected large record text to exceed 64KB, got %d bytes", len(bigText))
+	}
+}
+
+func handleRetrieveBatchResultsJSONLEndpoint(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/x-jsonl")
+
+	makeLine := func(i int, text string) []byte {
+		res := anthropic.BatchResult{
+			CustomId: "custom_id_" + strconv.Itoa(i),
+			Result: anthropic.BatchResultCore{
+				Type: anthropic.ResultTypeSucceeded,
+				Result: anthropic.MessagesResponse{
+					ID:   "msg_" + strconv.Itoa(i),
+					Type: anthropic.MessagesResponseTypeMessage,
+					Role: anthropic.RoleAssistant,
+					Content: []anthropic.MessageContent{
+						{
+							Type: anthropic.MessagesContentTypeText,
+							Text: toPtr(text),
+						},
+					},
+					Model:      anthropic.ModelClaude3Haiku20240307,
+					StopReason: anthropic.MessagesStopReasonEndTurn,
+				},
+			},
+		}
+		b, _ := json.Marshal(res)
+		return append(b, '\n')
+	}
+
+	var body []byte
+	body = append(body, makeLine(0, "first")...)
+	body = append(body, makeLine(1, strings.Repeat("A", 70*1024))...)
+	body = append(body, makeLine(2, "third")...)
+
+	_, _ = w.Write(body)
+}
+
 func TestListBatches(t *testing.T) {
 	server := test.NewTestServer()
 	server.RegisterHandler("/v1/messages/batches", handleListBatchesEndpoint)
