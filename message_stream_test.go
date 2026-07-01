@@ -586,6 +586,66 @@ func handlerMessagesStream(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(dataBytes)
 }
 
+func TestCreateMessagesStreamMergesServerToolUsage(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/messages", handlerMessagesStreamServerToolUse)
+
+	ts := server.AnthropicTestServer()
+	ts.Start()
+	defer ts.Close()
+
+	baseUrl := ts.URL + "/v1"
+	client := anthropic.NewClient(
+		test.GetTestToken(),
+		anthropic.WithBaseURL(baseUrl),
+	)
+
+	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
+		MessagesRequest: anthropic.MessagesRequest{
+			Model: anthropic.ModelClaude3Haiku20240307,
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("Search the web."),
+			},
+			MaxTokens: 1000,
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateMessagesStream error: %s", err)
+	}
+
+	if resp.Usage.ServerToolUse == nil {
+		t.Fatalf("expected Usage.ServerToolUse to be populated, got nil")
+	}
+	if resp.Usage.ServerToolUse.WebSearchRequests != 3 {
+		t.Fatalf("expected 3 web search requests, got %d", resp.Usage.ServerToolUse.WebSearchRequests)
+	}
+}
+
+func handlerMessagesStreamServerToolUse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+
+	var dataBytes []byte
+
+	dataBytes = append(dataBytes, []byte("event: message_start\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_start","message":{"id":"1","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":14,"output_tokens":1}}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: message_delta\n")...)
+	dataBytes = append(
+		dataBytes,
+		[]byte(
+			`data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":9,"server_tool_use":{"web_search_requests":3}}}`+"\n\n",
+		)...)
+
+	dataBytes = append(dataBytes, []byte("event: message_stop\n")...)
+	dataBytes = append(dataBytes, []byte(`data: {"type":"message_stop"}`+"\n\n")...)
+
+	_, _ = w.Write(dataBytes)
+}
+
 func handlerMessagesStreamSparseContentBlockIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 
