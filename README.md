@@ -501,18 +501,44 @@ Beta Version Identifier            | Code Constant                   | Descripti
 The following models are supported by go-anthropic.
 These models are also available for use on Google's Vertex AI platform as well.
 
-Model Name                     | Model String
--------------------------------|------------------------------
-ModelClaude2Dot0               | "claude-2.0"
-ModelClaude2Dot1               | "claude-2.1"
-ModelClaude3Opus20240229       | "claude-3-opus-20240229"
-ModelClaude3Sonnet20240229     | "claude-3-sonnet-20240229"
-ModelClaude3Dot5Sonnet20240620 | "claude-3-5-sonnet-20240620"
-ModelClaude3Dot5Sonnet20241022 | "claude-3-5-sonnet-20241022"
-ModelClaude3Dot5SonnetLatest   | "claude-3-5-sonnet-latest"
-ModelClaude3Haiku20240307      | "claude-3-haiku-20240307"
-ModelClaude3Dot5HaikuLatest    | "claude-3-5-haiku-latest"
-ModelClaude3Dot5Haiku20241022  | "claude-3-5-haiku-20241022"
+Deprecated and retired constants are kept for backwards compatibility (existing code keeps compiling) and are
+marked with Go `// Deprecated:` doc comments in [common.go](common.go); requests using a **Retired** model ID
+will fail against the Anthropic API. See [Anthropic's model deprecations page](https://platform.claude.com/docs/en/about-claude/model-deprecations)
+for the current, authoritative status.
+
+Model Name                     | Model String                    | Status
+--------------------------------|----------------------------------|------------------------------
+ModelClaude2Dot0                | "claude-2.0"                     | Retired (2025-07-21)
+ModelClaude2Dot1                | "claude-2.1"                     | Retired (2025-07-21)
+ModelClaude3Opus20240229        | "claude-3-opus-20240229"         | Retired (2026-01-05)
+ModelClaude3Sonnet20240229      | "claude-3-sonnet-20240229"       | Retired (2025-07-21)
+ModelClaude3Dot5Sonnet20240620  | "claude-3-5-sonnet-20240620"     | Retired (2025-10-28)
+ModelClaude3Dot5Sonnet20241022  | "claude-3-5-sonnet-20241022"     | Retired (2025-10-28)
+ModelClaude3Dot5SonnetLatest    | "claude-3-5-sonnet-latest"       | Retired (aliased a retired snapshot)
+ModelClaude3Haiku20240307       | "claude-3-haiku-20240307"        | Retired (2026-04-20)
+ModelClaude3Dot5HaikuLatest     | "claude-3-5-haiku-latest"        | Retired (aliased a retired snapshot)
+ModelClaude3Dot5Haiku20241022   | "claude-3-5-haiku-20241022"      | Retired (2026-02-19)
+ModelClaudeHaiku4Dot5           | "claude-haiku-4-5"               | Active
+ModelClaudeHaiku4Dot5V20251001  | "claude-haiku-4-5-20251001"      | Active
+ModelClaude3Dot7SonnetLatest    | "claude-3-7-sonnet-latest"       | Retired (aliased a retired snapshot)
+ModelClaude3Dot7Sonnet20250219  | "claude-3-7-sonnet-20250219"     | Retired (2026-02-19)
+ModelClaudeOpus4Dot0            | "claude-opus-4-0"                | Retired (aliased a retired snapshot)
+ModelClaudeOpus4V20250514       | "claude-opus-4-20250514"         | Retired (2026-06-15)
+ModelClaudeOpus4Dot1            | "claude-opus-4-1"                | Deprecated, retires 2026-08-05
+ModelClaudeOpus4Dot1V20250805   | "claude-opus-4-1-20250805"       | Deprecated, retires 2026-08-05
+ModelClaudeSonnet4Dot0          | "claude-sonnet-4-0"              | Retired (aliased a retired snapshot)
+ModelClaudeSonnet4V20250514     | "claude-sonnet-4-20250514"       | Retired (2026-06-15)
+ModelClaudeSonnet4Dot5          | "claude-sonnet-4-5"              | Active
+ModelClaudeSonnet4Dot5V20250929 | "claude-sonnet-4-5-20250929"     | Active
+ModelClaudeOpus4Dot5            | "claude-opus-4-5"                | Active
+ModelClaudeOpus4Dot5V20251101   | "claude-opus-4-5-20251101"       | Active
+ModelClaudeSonnet4Dot6          | "claude-sonnet-4-6"              | Active
+ModelClaudeOpus4Dot6            | "claude-opus-4-6"                | Active
+ModelClaudeOpus4Dot7            | "claude-opus-4-7"                | Active
+ModelClaudeOpus4Dot8            | "claude-opus-4-8"                | Active
+ModelClaudeSonnet5               | "claude-sonnet-5"                | Active
+ModelClaudeFable5                | "claude-fable-5"                 | Active
+ModelClaudeMythos5               | "claude-mythos-5"                | Active (Project Glasswing only)
 
 ### Other Enums
 Two exported enums are additionally provided:
