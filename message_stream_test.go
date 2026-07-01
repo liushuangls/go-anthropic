@@ -694,6 +694,61 @@ func handlerMessagesStreamNegativeContentBlockStopIndex(w http.ResponseWriter, r
 	)
 }
 
+func TestCreateMessagesStreamReturnsErrorForAbsurdContentBlockIndexes(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+	}{
+		{
+			name: "content_block_start",
+			data: `{"type":"content_block_start","index":1000000000,"content_block":{"type":"text","text":""}}`,
+		},
+		{
+			name: "content_block_delta",
+			data: `{"type":"content_block_delta","index":1000000000,"delta":{"type":"text_delta","text":"x"}}`,
+		},
+		{
+			name: "content_block_stop",
+			data: `{"type":"content_block_stop","index":1000000000}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := test.NewTestServer()
+			server.RegisterHandler("/v1/messages", func(w http.ResponseWriter, r *http.Request) {
+				writeMessagesStreamWithNegativeContentBlockIndex(w, tt.name, tt.data)
+			})
+
+			ts := server.AnthropicTestServer()
+			ts.Start()
+			defer ts.Close()
+
+			baseUrl := ts.URL + "/v1"
+			client := anthropic.NewClient(
+				test.GetTestToken(),
+				anthropic.WithBaseURL(baseUrl),
+			)
+
+			_, err := client.CreateMessagesStream(
+				context.Background(),
+				anthropic.MessagesStreamRequest{
+					MessagesRequest: anthropic.MessagesRequest{
+						Model: anthropic.ModelClaude3Haiku20240307,
+						Messages: []anthropic.Message{
+							anthropic.NewUserTextMessage("What is your name?"),
+						},
+						MaxTokens: 1000,
+					},
+				},
+			)
+			if err == nil {
+				t.Fatalf("CreateMessagesStream expect error for absurd index, but got nil")
+			}
+		})
+	}
+}
+
 func writeMessagesStreamWithNegativeContentBlockIndex(w http.ResponseWriter, event, data string) {
 	w.Header().Set("Content-Type", "text/event-stream")
 
