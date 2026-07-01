@@ -89,7 +89,12 @@ type DocumentCitations struct {
 }
 
 type MessagesRequest struct {
-	Model            Model     `json:"model"`
+	// Model is required by the direct Anthropic API, but on Vertex AI and
+	// Bedrock the model is carried in the URL and MUST NOT appear in the body.
+	// Those adapters blank it via SetAnthropicVersion/SetModel, so it must stay
+	// omitempty — otherwise an empty "model" leaks into the body and Vertex
+	// rejects the request with `model: Extra inputs are not permitted`.
+	Model            Model     `json:"model,omitempty"`
 	AnthropicVersion string    `json:"anthropic_version,omitempty"`
 	Messages         []Message `json:"messages"`
 	MaxTokens        int       `json:"max_tokens"`
