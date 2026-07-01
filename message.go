@@ -292,22 +292,59 @@ type MessageContent struct {
 
 // MarshalJSON implements custom JSON marshaling for MessageContent.
 //
-// MessageContent embeds several pointer structs (tool_use, server_tool_use,
-// tool_result, web_search_tool_result) that declare overlapping JSON field
-// names — for example both MessageContentToolResult and
-// MessageContentWebSearchToolResult define "tool_use_id" and "content", and
-// both MessageContentToolUse and MessageContentServerToolUse define "id",
-// "name" and "input". Go's encoding/json drops fields that are ambiguous across
-// embedded structs at the same depth, which would silently strip "tool_use_id",
-// "content", "id", "name" and "input" from the wire payload.
+// This does two things that plain struct marshaling can't:
 //
-// To produce a correct payload we marshal the base struct (which omits the
-// ambiguous fields) and then merge back the fields of whichever embedded tool
-// struct is actually populated. Blocks without an ambiguous embedded struct
-// (text, image, document, thinking, …) are marshaled exactly as before.
+//  1. Citations: the response-side Citations slice is stored under the
+//     non-API json tag "citations_list" (to avoid colliding with the
+//     request-side DocumentCitations field, which is tagged "citations").
+//     UnmarshalJSON maps the incoming API "citations" array onto Citations,
+//     but without this override, re-serializing cited assistant content
+//     would emit "citations_list" and silently drop the citations when
+//     echoed back to the API. This emits the response citations under the
+//     API key "citations". The response Citations slice and the request
+//     DocumentCitations are mutually exclusive in practice, so only one is
+//     ever surfaced under "citations".
+//
+//  2. Ambiguous embedded fields: MessageContent embeds several pointer
+//     structs (tool_use, server_tool_use, tool_result, web_search_tool_result)
+//     that declare overlapping JSON field names — for example both
+//     MessageContentToolResult and MessageContentWebSearchToolResult define
+//     "tool_use_id" and "content", and both MessageContentToolUse and
+//     MessageContentServerToolUse define "id", "name" and "input". Go's
+//     encoding/json drops fields that are ambiguous across embedded structs
+//     at the same depth, which would silently strip "tool_use_id", "content",
+//     "id", "name" and "input" from the wire payload.
+//
+// To produce a correct payload we first marshal the base struct with the
+// citations override applied (which still omits the ambiguous tool fields)
+// and then merge back the fields of whichever embedded tool struct is
+// actually populated. Blocks without an ambiguous embedded struct (text,
+// image, document, thinking, …) skip the merge step.
 func (m MessageContent) MarshalJSON() ([]byte, error) {
 	type Alias MessageContent
-	base, err := json.Marshal(Alias(m))
+	aux := struct {
+		Alias
+		// Citations surfaces either the response-side citations array or the
+		// request-side document citations object under the API key.
+		Citations interface{} `json:"citations,omitempty"`
+	}{
+		Alias: (Alias)(m),
+	}
+
+	// Suppress the alias-level citation fields:
+	//   - Alias.Citations is tagged "citations_list" (non-API key)
+	//   - Alias.DocumentCitations is tagged "citations" and would otherwise
+	//     conflict with the outer field.
+	aux.Alias.Citations = nil
+	aux.Alias.DocumentCitations = nil
+
+	if len(m.Citations) > 0 {
+		aux.Citations = m.Citations
+	} else if m.DocumentCitations != nil {
+		aux.Citations = m.DocumentCitations
+	}
+
+	base, err := json.Marshal(aux)
 	if err != nil {
 		return nil, err
 	}
