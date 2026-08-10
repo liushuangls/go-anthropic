@@ -37,8 +37,25 @@ func TestCountTokens(t *testing.T) {
 		},
 	}
 
-	t.Run("count tokens success", func(t *testing.T) {
+	t.Run("count tokens success with MultiSystem", func(t *testing.T) {
 		resp, err := client.CountTokens(context.Background(), request)
+		if err != nil {
+			t.Fatalf("CountTokens error: %v", err)
+		}
+
+		t.Logf("CountTokens resp: %+v", resp)
+	})
+
+	t.Run("count tokens success with System", func(t *testing.T) {
+		resp, err := client.CountTokens(context.Background(), anthropic.MessagesRequest{
+			Model:  anthropic.ModelClaude3Dot5HaikuLatest,
+			System: "you are an assistant and you are snarky",
+			Messages: []anthropic.Message{
+				anthropic.NewUserTextMessage("What is your name?"),
+				anthropic.NewAssistantTextMessage("My name is Claude."),
+				anthropic.NewUserTextMessage("What is your favorite color?"),
+			},
+		})
 		if err != nil {
 			t.Fatalf("CountTokens error: %v", err)
 		}
