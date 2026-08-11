@@ -159,6 +159,11 @@ func TestVertexCountTokens(t *testing.T) {
 			return
 		}
 
+		if _, ok := raw["thinking"]; ok {
+			http.Error(w, "thinking: Field must not be present", http.StatusBadRequest)
+			return
+		}
+
 		res := anthropic.CountTokensResponse{InputTokens: 321}
 		resBytes, _ := json.Marshal(res)
 		_, _ = w.Write(resBytes)
@@ -176,6 +181,9 @@ func TestVertexCountTokens(t *testing.T) {
 		Model: anthropic.ModelClaudeHaiku4Dot5V20251001,
 		Messages: []anthropic.Message{
 			anthropic.NewUserTextMessage("Count these tokens."),
+		},
+		Thinking: &anthropic.Thinking{
+			Type: anthropic.ThinkingTypeAdaptive,
 		},
 	})
 	if err != nil {
