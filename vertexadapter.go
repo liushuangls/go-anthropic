@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -58,7 +59,8 @@ func (v *VertexAdapter) fullMessagesURL(baseUrl string, suffix string, model Mod
 }
 
 func (v *VertexAdapter) fullCountURL(baseUrl string, suffix string) string {
-	return fmt.Sprintf("%s%s", baseUrl, suffix)
+	trimmedBaseUrl, _ := strings.CutSuffix(baseUrl, "/")
+	return fmt.Sprintf("%s%s", trimmedBaseUrl, suffix)
 }
 
 func (v *VertexAdapter) translateUrlSuffix(suffix string, stream bool) (string, error) {

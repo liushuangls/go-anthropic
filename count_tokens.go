@@ -23,8 +23,11 @@ type countTokensRequest struct {
 	Messages         []Message   `json:"messages"`
 	System           interface{} `json:"system,omitempty"`
 
-	Tools      []ToolDefinition `json:"tools,omitempty"`
-	ToolChoice *ToolChoice      `json:"tool_choice,omitempty"`
+	Tools        []ToolDefinition     `json:"tools,omitempty"`
+	ToolChoice   *ToolChoice          `json:"tool_choice,omitempty"`
+	Thinking     *Thinking            `json:"thinking,omitempty"`
+	CacheControl *MessageCacheControl `json:"cache_control,omitempty"`
+	OutputConfig *OutputConfig        `json:"output_config,omitempty"`
 }
 
 var _ VertexAISupport = (*countTokensRequest)(nil)
@@ -35,6 +38,12 @@ func (m countTokensRequest) GetModel() Model {
 
 func (m *countTokensRequest) SetAnthropicVersion(version APIVersion) {
 	m.AnthropicVersion = string(version)
+	if version == APIVersionVertex20231016 {
+		m.Model = Model(m.Model.asVertexModel())
+	}
+	m.Thinking = nil
+	m.CacheControl = nil
+	m.OutputConfig = nil
 }
 
 func (m countTokensRequest) IsStreaming() bool {
@@ -51,6 +60,9 @@ func newCountTokensRequest(request MessagesRequest) countTokensRequest {
 		Messages:         request.Messages,
 		Tools:            request.Tools,
 		ToolChoice:       request.ToolChoice,
+		Thinking:         request.Thinking,
+		CacheControl:     request.CacheControl,
+		OutputConfig:     request.OutputConfig,
 	}
 
 	if len(request.MultiSystem) > 0 {
