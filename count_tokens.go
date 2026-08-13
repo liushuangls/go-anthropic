@@ -18,9 +18,10 @@ type CountTokensResponse struct {
 // MessagesRequest, whose max_tokens field has no omitempty and would always
 // be present.
 type countTokensRequest struct {
-	Model    Model       `json:"model"`
-	Messages []Message   `json:"messages"`
-	System   interface{} `json:"system,omitempty"`
+	Model            Model       `json:"model"`
+	AnthropicVersion string      `json:"anthropic_version,omitempty"`
+	Messages         []Message   `json:"messages"`
+	System           interface{} `json:"system,omitempty"`
 
 	Tools        []ToolDefinition     `json:"tools,omitempty"`
 	ToolChoice   *ToolChoice          `json:"tool_choice,omitempty"`
@@ -29,18 +30,39 @@ type countTokensRequest struct {
 	OutputConfig *OutputConfig        `json:"output_config,omitempty"`
 }
 
+var _ VertexAISupport = (*countTokensRequest)(nil)
+
+func (m countTokensRequest) GetModel() Model {
+	return m.Model
+}
+
+func (m *countTokensRequest) SetAnthropicVersion(version APIVersion) {
+	m.AnthropicVersion = string(version)
+	if version == APIVersionVertex20231016 {
+		m.Model = Model(m.Model.asVertexModel())
+	}
+	m.Thinking = nil
+	m.CacheControl = nil
+	m.OutputConfig = nil
+}
+
+func (m countTokensRequest) IsStreaming() bool {
+	return false
+}
+
 // newCountTokensRequest builds the restricted count_tokens body from a
 // MessagesRequest, preserving the system / multi-system handling that
 // MessagesRequest.MarshalJSON performs.
 func newCountTokensRequest(request MessagesRequest) countTokensRequest {
 	body := countTokensRequest{
-		Model:        request.Model,
-		Messages:     request.Messages,
-		Tools:        request.Tools,
-		ToolChoice:   request.ToolChoice,
-		Thinking:     request.Thinking,
-		CacheControl: request.CacheControl,
-		OutputConfig: request.OutputConfig,
+		Model:            request.Model,
+		AnthropicVersion: request.AnthropicVersion,
+		Messages:         request.Messages,
+		Tools:            request.Tools,
+		ToolChoice:       request.ToolChoice,
+		Thinking:         request.Thinking,
+		CacheControl:     request.CacheControl,
+		OutputConfig:     request.OutputConfig,
 	}
 
 	if len(request.MultiSystem) > 0 {

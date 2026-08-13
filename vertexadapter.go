@@ -4,6 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+)
+
+const (
+	rawPredictSuffix       = ":rawPredict"
+	streamRawPredictSuffix = ":streamRawPredict"
+	countTokensSuffix      = "/count-tokens:rawPredict"
 )
 
 var _ ClientAdapter = (*VertexAdapter)(nil)
@@ -46,19 +53,26 @@ func (v *VertexAdapter) TranslateError(resp *http.Response, body []byte) (error,
 	return nil, false
 }
 
-func (v *VertexAdapter) fullURL(baseUrl string, suffix string, model Model) string {
+func (v *VertexAdapter) fullMessagesURL(baseUrl string, suffix string, model Model) string {
 	// replace the first slash with a colon
 	return fmt.Sprintf("%s/%s:%s", baseUrl, model.asVertexModel(), suffix[1:])
+}
+
+func (v *VertexAdapter) fullCountURL(baseUrl string, suffix string) string {
+	trimmedBaseUrl, _ := strings.CutSuffix(baseUrl, "/")
+	return fmt.Sprintf("%s%s", trimmedBaseUrl, suffix)
 }
 
 func (v *VertexAdapter) translateUrlSuffix(suffix string, stream bool) (string, error) {
 	switch suffix {
 	case "/messages":
 		if stream {
-			return ":streamRawPredict", nil
+			return streamRawPredictSuffix, nil
 		} else {
-			return ":rawPredict", nil
+			return rawPredictSuffix, nil
 		}
+	case "/messages/count_tokens":
+		return countTokensSuffix, nil
 	}
 
 	return "", fmt.Errorf("unknown suffix: %s", suffix)
@@ -82,12 +96,16 @@ func (v *VertexAdapter) PrepareRequest(
 			if err != nil {
 				return "", err
 			}
+
+			if urlSuffix == countTokensSuffix {
+				return v.fullCountURL(c.config.BaseURL, urlSuffix), nil
+			}
 		} else {
 			return "", fmt.Errorf("this call is not supported by the Vertex AI API")
 		}
 	}
 
-	return v.fullURL(c.config.BaseURL, urlSuffix, model), nil
+	return v.fullMessagesURL(c.config.BaseURL, urlSuffix, model), nil
 }
 
 func (v *VertexAdapter) SetRequestHeaders(c *Client, req *http.Request) error {
