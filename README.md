@@ -34,6 +34,7 @@ Currently, go-anthropic requires Go version 1.21 or greater.
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -43,7 +44,7 @@ import (
 func main() {
 	client := anthropic.NewClient("your anthropic api key")
 	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-		Model: anthropic.ModelClaude3Haiku20240307,
+		Model: anthropic.ModelClaudeHaiku4Dot5V20251001,
 		Messages: []anthropic.Message{
 			anthropic.NewUserTextMessage("What is your name?"),
 		},
@@ -68,6 +69,7 @@ func main() {
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -78,7 +80,7 @@ func main() {
 	client := anthropic.NewClient("your anthropic api key")
 	resp, err := client.CreateMessagesStream(context.Background(), anthropic.MessagesStreamRequest{
 		MessagesRequest: anthropic.MessagesRequest{
-			Model: anthropic.ModelClaude3Haiku20240307,
+			Model: anthropic.ModelClaudeHaiku4Dot5V20251001,
 			Messages: []anthropic.Message{
 				anthropic.NewUserTextMessage("What is your name?"),
 			},
@@ -110,8 +112,11 @@ func main() {
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/liushuangls/go-anthropic/v2"
 )
@@ -131,7 +136,7 @@ func main() {
 	}
 
 	resp, err := client.CreateMessages(context.Background(), anthropic.MessagesRequest{
-		Model: anthropic.ModelClaude3Opus20240229,
+		Model: anthropic.ModelClaudeOpus4Dot8,
 		Messages: []anthropic.Message{
 			{
 				Role: anthropic.RoleUser,
@@ -158,7 +163,7 @@ func main() {
 		}
 		return
 	}
-	fmt.Println(*resp.Content[0].GetText())
+	fmt.Println(resp.Content[0].GetText())
 }
 ```
 </details>
@@ -183,7 +188,7 @@ func main() {
 	)
 
 	request := anthropic.MessagesRequest{
-		Model: anthropic.ModelClaude3Haiku20240307,
+		Model: anthropic.ModelClaudeHaiku4Dot5V20251001,
 		Messages: []anthropic.Message{
 			anthropic.NewUserTextMessage("What is the weather like in San Francisco?"),
 		},
@@ -269,7 +274,7 @@ func main() {
 	resp, err := client.CreateMessages(
 		context.Background(),
 		anthropic.MessagesRequest{
-			Model: anthropic.ModelClaude3Haiku20240307,
+			Model: anthropic.ModelClaudeHaiku4Dot5V20251001,
 			MultiSystem: []anthropic.MessageSystemPart{
 				{
 					Type: "text",
@@ -284,7 +289,7 @@ func main() {
 				},
 			},
 			Messages: []anthropic.Message{
-				anthropic.NewUserTextMessage("Analyze the major themes in Pride and Prejudice.")
+				anthropic.NewUserTextMessage("Analyze the major themes in Pride and Prejudice."),
 			},
 			MaxTokens: 1000,
 	})
